@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Typefree · 5 分钟拿到 API Key（手把手图文教程）</title>
+<meta name="description" content="完全没接触过也不怕。跟着图一步步点，几分钟拿到 API Key，让 Typefree 跑起来。">
+<style>
+  /* ===== 设计令牌：与官网 index-new / macOS App 一套（系统原生灰）===== */
+  :root{
+    --bg:#FCFCFD; --card:#FFFFFF; --alt:#F5F5F7; --alt2:#ECECEE;
+    --ink:#1D1D1F; --ink2:#515154; --ink3:#86868B;
+    --line:rgba(0,0,0,.09); --line2:rgba(0,0,0,.06);
+    --ok:#2E8762; --ok-soft:#E8F2EC; --dark:#1C1C1E;
+    --warn:#9A5A16; --warn-soft:#FBF3E6; --pin:#E0483B;
+    --sans:-apple-system,BlinkMacSystemFont,"PingFang SC","Segoe UI",sans-serif;
+    --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+    --shadow:0 24px 70px rgba(20,20,22,.10), 0 4px 14px rgba(20,20,22,.05);
+    --shadow-sm:0 1px 2px rgba(20,20,22,.05), 0 10px 28px rgba(20,20,22,.06);
+    --r:16px; --r-sm:12px;
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;-webkit-text-size-adjust:100%;}
+  body{margin:0;color:var(--ink);background:var(--bg);font-family:var(--sans);
+    line-height:1.66;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;}
+  a{color:inherit;text-decoration:none;}
+  p{margin:0;}
+  h1,h2,h3{margin:0;letter-spacing:-.022em;}
+  code{font-family:var(--mono);font-size:.92em;background:var(--alt);padding:1px 5px;border-radius:5px;}
+  .wrap{width:min(860px,calc(100% - 44px));margin:0 auto;}
+
+  /* nav */
+  nav{position:sticky;top:0;z-index:50;border-bottom:1px solid var(--line2);
+    background:rgba(252,252,253,.72);backdrop-filter:saturate(180%) blur(20px);}
+  nav .wrap{display:flex;align-items:center;justify-content:space-between;min-height:58px;}
+  .brand{display:inline-flex;align-items:center;gap:10px;font-size:16px;font-weight:700;letter-spacing:-.01em;}
+  .brand .logo{width:26px;height:26px;border-radius:7px;background:var(--ink);display:inline-flex;
+    align-items:center;justify-content:center;color:#fff;font-size:13px;font-weight:800;}
+  .nav-links a{font-size:14px;font-weight:550;color:var(--ink2);}
+  .nav-links a:hover{color:var(--ink);}
+
+  /* hero */
+  header.hero{position:relative;padding:62px 0 26px;overflow:hidden;}
+  header.hero::before{content:"";position:absolute;inset:0;z-index:0;
+    background:radial-gradient(46% 38% at 30% 0%,rgba(46,135,98,.06),rgba(46,135,98,0) 70%);}
+  .hero-inner{position:relative;z-index:1;}
+  .eyebrow{display:inline-flex;align-items:center;gap:9px;height:31px;padding:0 14px;border-radius:999px;
+    background:var(--alt);border:1px solid var(--line2);color:var(--ink2);font-size:13px;font-weight:600;}
+  .eyebrow .dot{width:7px;height:7px;border-radius:50%;background:var(--ok);box-shadow:0 0 0 3px rgba(46,135,98,.16);}
+  h1{font-size:clamp(28px,5vw,42px);line-height:1.12;font-weight:800;margin:18px 0 14px;}
+  .lead{font-size:17.5px;color:var(--ink2);max-width:680px;line-height:1.55;}
+
+  /* note */
+  .note{margin:22px 0;padding:17px 19px;border:1px solid var(--line);border-left:3px solid var(--ok);
+    border-radius:var(--r-sm);background:var(--card);box-shadow:var(--shadow-sm);font-size:15px;}
+  .note b{color:var(--ink);}
+  .note.warn{border-left-color:var(--warn);background:var(--warn-soft);}
+  .note.warn b{color:var(--warn);}
+
+  /* step header */
+  .step-h{display:flex;align-items:center;gap:13px;margin:46px 0 6px;}
+  .step-n{flex:none;width:32px;height:32px;border-radius:9px;background:var(--ink);color:#fff;
+    font-weight:700;font-size:15px;display:flex;align-items:center;justify-content:center;}
+  .step-h h2{font-size:23px;font-weight:760;letter-spacing:-.01em;}
+  .sub{color:var(--ink2);font-size:15px;margin:3px 0 0;line-height:1.55;}
+
+  /* plans */
+  .plans{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:20px;}
+  @media(max-width:680px){.plans{grid-template-columns:1fr;}}
+  .plan{border:1px solid var(--line);border-radius:var(--r);background:var(--card);padding:22px;position:relative;
+    box-shadow:var(--shadow-sm);transition:transform .18s ease,box-shadow .18s ease;}
+  .plan:hover{transform:translateY(-2px);}
+  .plan.reco{border-color:var(--ok);box-shadow:0 0 0 3px var(--ok-soft),var(--shadow-sm);}
+  .plan .tag{position:absolute;top:-11px;left:18px;background:var(--ok);color:#fff;
+    font-size:12px;font-weight:700;padding:3px 11px;border-radius:999px;}
+  .plan h3{margin:4px 0 6px;font-size:18px;font-weight:740;}
+  .plan .keys{font-size:13.5px;font-weight:700;color:var(--ok);background:var(--ok-soft);
+    display:inline-block;padding:3px 11px;border-radius:8px;margin:6px 0 11px;}
+  .plan p{font-size:14.5px;color:var(--ink2);line-height:1.6;}
+  .plan .who{margin-top:11px;font-size:14px;color:var(--ink);font-weight:650;}
+
+  /* steps list */
+  ol.steps{margin:16px 0 0;padding-left:0;list-style:none;counter-reset:s;}
+  ol.steps>li{position:relative;padding:0 0 20px 40px;counter-increment:s;}
+  ol.steps>li::before{content:counter(s);position:absolute;left:0;top:-1px;width:27px;height:27px;
+    border-radius:50%;background:var(--ok-soft);color:var(--ok);font-weight:700;font-size:14px;
+    display:flex;align-items:center;justify-content:center;}
+  ol.steps>li::after{content:"";position:absolute;left:13px;top:29px;bottom:0;width:1.5px;background:var(--line);}
+  ol.steps>li:last-child::after{display:none;}
+  ol.steps b{font-weight:700;}
+
+  /* 截图框 + 红框 + 隐私遮罩 */
+  figure{margin:15px 0 2px;}
+  .shot{position:relative;border:1px solid var(--line);border-radius:var(--r);overflow:hidden;
+    box-shadow:var(--shadow);background:#fff;line-height:0;}
+  .shot img{width:100%;display:block;}
+  .pin{position:absolute;border:3px solid var(--pin);border-radius:8px;
+    box-shadow:0 0 0 4px rgba(224,72,59,.16);pointer-events:none;}
+  .pin .lbl{position:absolute;top:-13px;left:-3px;transform:translateY(-100%);
+    background:var(--pin);color:#fff;font-size:12px;font-weight:700;white-space:nowrap;
+    padding:3px 8px;border-radius:6px;line-height:1.3;}
+  .mask{position:absolute;background:var(--alt2);border-radius:3px;}
+  figcaption{font-size:13px;color:var(--ink3);margin-top:9px;text-align:center;}
+
+  .key-link{display:inline-flex;align-items:center;gap:7px;margin:5px 0;min-height:42px;padding:0 16px;
+    border-radius:11px;border:1px solid var(--ink);background:var(--ink);color:#fff;
+    font-size:14.5px;font-weight:650;transition:transform .16s ease;}
+  .key-link:hover{transform:translateY(-1px);}
+  .key-link.ghost{background:var(--card);color:var(--ink);border-color:var(--line);}
+
+  /* dict & faq */
+  .dict{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px;}
+  @media(max-width:680px){.dict{grid-template-columns:1fr;}}
+  .dict div{border:1px solid var(--line);border-radius:var(--r-sm);background:var(--card);
+    padding:14px 16px;font-size:14px;box-shadow:var(--shadow-sm);}
+  .dict b{color:var(--ink);}
+  details{border:1px solid var(--line);border-radius:var(--r-sm);background:var(--card);
+    padding:2px 17px;margin:10px 0;box-shadow:var(--shadow-sm);}
+  details summary{cursor:pointer;font-weight:700;padding:13px 0;font-size:15px;list-style:none;}
+  details summary::-webkit-details-marker{display:none;}
+  details summary::before{content:"＋ ";color:var(--ok);font-weight:700;}
+  details[open] summary::before{content:"－ ";}
+  details p{color:var(--ink2);font-size:14.5px;line-height:1.6;padding:0 0 15px;}
+
+  footer{padding:46px 0 64px;color:var(--ink3);font-size:13px;text-align:center;border-top:1px solid var(--line2);margin-top:48px;}
+</style>
+</head>
+<body>
+<nav><div class="wrap">
+  <a class="brand" href="index.html"><span class="logo">T</span>Typefree</a>
+  <div class="nav-links"><a href="index.html">← 返回首页</a></div>
+</div></nav>
+
+<header class="hero"><div class="wrap hero-inner">
+  <span class="eyebrow"><span class="dot"></span>配置指南 · 5 分钟搞定</span>
+  <h1>手把手拿到 API Key，<br>让 Typefree 跑起来</h1>
+  <p class="lead">完全没接触过也别怕。跟着下面的图一步步点，几分钟就行。每个看不懂的词，我都给你翻译成人话。</p>
+</div></header>
+
+<div class="wrap">
+
+  <div class="note">
+    <b>先说清楚：API Key 是啥？</b><br>
+    你可以把它理解成一把<b>「钥匙」</b>——它让 Typefree 能用<b>你自己账号</b>下的 AI 服务（把话变成字、把字理顺）。
+    所以你要做的就三件事：<b>① 去拿这把钥匙　② 复制它　③ 粘进 Typefree</b>。拿钥匙不花钱，注册个账号、点几下就有了。
+  </div>
+
+  <!-- STEP 1 -->
+  <div class="step-h"><span class="step-n">1</span><div>
+    <h2>先选一个方案</h2>
+    <p class="sub">Typefree 帮你干两件事：把话变成字（识别，必须）+ 把字理顺（润色，可选）。这两件事可以用阿里、也可以用火山（豆包）。给你两个推荐方案：</p>
+  </div></div>
+
+  <div class="plans">
+    <div class="plan reco">
+      <span class="tag">👍 新手推荐</span>
+      <h3>全用阿里</h3>
+      <span class="keys">只拿 1 把钥匙</span>
+      <p>识别和润色都用阿里，<b>一把钥匙全搞定</b>，最省事。识别送 10 小时免费额度。</p>
+      <p class="who">适合：想最快搞定的人。</p>
+    </div>
+    <div class="plan">
+      <h3>豆包识别 + 阿里润色</h3>
+      <span class="keys">要拿 2 把钥匙</span>
+      <p>识别用<b>火山（豆包）</b>，免费时长更多（三档共约 60 小时）；润色还是用<b>阿里</b>（效果更好）。</p>
+      <p class="who">适合：想要更多免费识别时长的人。</p>
+    </div>
+  </div>
+  <p class="sub" style="margin-top:16px;">选好了？按你选的方案往下看：<b>全用阿里只看第 2 步；要用豆包识别的，再加看第 3 步。</b></p>
+
+  <!-- STEP 2: 阿里 -->
+  <div class="step-h"><span class="step-n">2</span><div>
+    <h2>拿阿里的钥匙</h2>
+    <p class="sub">这把钥匙识别和润色都能用（同一个）。两个方案都需要它。</p>
+  </div></div>
+
+  <ol class="steps">
+    <li><b>打开阿里百炼控制台。</b><br>
+      <a class="key-link" href="https://bailian.console.aliyun.com/" target="_blank">↗ 打开阿里百炼</a><br>
+      第一次会让你注册 / 登录阿里云账号、同意一个协议。<b>同意后会自动开通、自动送你免费额度，不用单独申请任何东西。</b>（控制台＝阿里的网站后台。）
+    </li>
+    <li><b>点左侧菜单最下面的「API Key」。</b></li>
+    <li><b>新账号第一次会让你先做「实名认证」。</b>点创建时如果弹出「您未完善个人基本信息」，点弹框里的<b>「去完善」</b>，按提示填你的<b>真实姓名 + 身份证号</b>（这是阿里的规定，大约 2 分钟）。填完回到这个页面、刷新一下就能创建了。
+      <figure>
+        <div class="shot">
+          <img src="guide-assets/g_ali_realname.png" alt="阿里新用户实名认证提示">
+          <div class="mask" style="top:0;right:0;width:13%;height:7%;"></div>
+          <div class="pin" style="top:19%;left:71.5%;width:8.5%;height:6%;"><span class="lbl">点去完善</span></div>
+        </div>
+        <figcaption>新账号第一次会弹这个提示。点「去完善」做实名认证（填真实姓名和身份证），2 分钟搞定。<b>已经实名过的老账号看不到这个，直接跳下一步。</b></figcaption>
+      </figure>
+    </li>
+    <li><b>点页面正中紫色的「创建 API Key」按钮。</b>
+      <figure>
+        <div class="shot">
+          <img src="guide-assets/g_ali_apikey.png" alt="阿里百炼 API Key 页">
+          <div class="mask" style="top:0;right:0;width:13%;height:7%;"></div>
+          <div class="pin" style="top:60%;left:45.5%;width:13.5%;height:6.5%;"><span class="lbl">点这里创建</span></div>
+        </div>
+        <figcaption>API Key 页正中间就是「创建 API Key」按钮（不是右上角）。</figcaption>
+      </figure>
+    </li>
+    <li><b>弹出的框里：业务空间选「默认业务空间」</b>（一定要选，不选点确定会飘红），<b>描述可以不填，权限保持「全部」，点「确定」。</b>
+      <figure>
+        <div class="shot">
+          <img src="guide-assets/g_ali_create.png" alt="阿里创建 API Key 对话框">
+          <div class="mask" style="top:0;right:0;width:13%;height:7%;"></div>
+          <div class="pin" style="top:26.5%;left:26.5%;width:47%;height:6.5%;"><span class="lbl">选「默认业务空间」</span></div>
+          <div class="pin" style="top:81.5%;left:65.5%;width:10.5%;height:6.5%;"><span class="lbl">点确定</span></div>
+        </div>
+        <figcaption>业务空间选「默认业务空间」，描述可留空，权限保持「全部」，点确定。</figcaption>
+      </figure>
+    </li>
+    <li><b>创建成功会弹出完整钥匙（<code>sk-</code> 开头），马上点「复制」存好！</b>
+      <figure>
+        <div class="shot">
+          <img src="guide-assets/g_ali_success.png" alt="阿里 API Key 创建成功，点复制保存">
+          <div class="mask" style="top:0;right:0;width:13%;height:7%;"></div>
+          <div class="pin" style="top:27%;left:63.5%;width:9.5%;height:6.5%;"><span class="lbl">点复制</span></div>
+          <div class="pin" style="top:68.5%;left:59.5%;width:9.5%;height:6%;"><span class="lbl">或点下载存成文件</span></div>
+        </div>
+        <figcaption>钥匙那行只显示这一次（图里已打码）。点「复制」粘到备忘录，或点「下载」存成文件。</figcaption>
+      </figure>
+      <div class="note warn" style="margin-top:11px;">
+        <b>⚠️ 重要：</b>这串完整的钥匙<b>只显示这一次</b>，关掉窗口后就只能看到前后几位了。所以一定要<b>当场复制、存到备忘录里</b>。
+      </div>
+    </li>
+  </ol>
+
+  <!-- STEP 3: 火山 -->
+  <div class="step-h"><span class="step-n">3</span><div>
+    <h2>拿火山（豆包）的钥匙</h2>
+    <p class="sub">只有「豆包识别 + 阿里润色」方案才需要这一步。全用阿里的可以跳过。</p>
+  </div></div>
+
+  <ol class="steps">
+    <li><b>打开火山语音控制台。</b><br>
+      <a class="key-link ghost" href="https://console.volcengine.com/speech/new/overview?projectName=default" target="_blank">↗ 打开火山语音控制台（新版）</a><br>
+      第一次会让你注册 / 登录火山引擎账号。
+    </li>
+    <li><b>新账号先做个「实名认证」</b>（火山要求实名后才能开通服务）。在「账号管理 → 实名认证」里选<b>个人认证</b>，用<b>微信 / 抖音 APP 扫脸</b>最快，手机扫一下脸，1 分钟搞定。
+      <figure>
+        <div class="shot">
+          <img src="guide-assets/g_volc_realname.png" alt="火山引擎个人实名认证">
+        </div>
+        <figcaption>实名认证选「个人认证 → 微信/抖音 APP 扫脸认证」（图中红框），手机扫脸最快。已实名的老账号跳过这步。</figcaption>
+      </figure>
+    </li>
+    <li><b>⚠️ 关键一步：开通「录音文件识别 1.0」和「2.0」两个服务。</b>火山和阿里不一样——<b>识别服务要单独开通</b>（都免费送额度）。在左侧「<b>系统管理 → 开通管理</b>」的「大模型」标签页里，找到这两个、各点一次「开通」：<br>　·「<b>录音文件识别 1.0</b>」＝ App 的<b>极速版 + 标准版</b>（这两档都在它里面）<br>　·「<b>录音文件识别 2.0</b>」＝ App 的 <b>2.0</b><br>开通这两个，App 三档就都能用了。
+      <figure>
+        <div class="shot">
+          <img src="guide-assets/g_volc_activate.png" alt="火山开通管理页">
+          <div class="mask" style="top:0;right:0;width:10%;height:9%;"></div>
+          <div class="pin" style="top:13%;left:8%;width:28%;height:6.5%;"><span class="lbl">① 录音文件识别2.0</span></div>
+          <div class="pin" style="top:13%;left:89.5%;width:7.5%;height:6.5%;"><span class="lbl">开通</span></div>
+          <div class="pin" style="top:49%;left:8%;width:28%;height:6.5%;"><span class="lbl">② 录音文件识别1.0</span></div>
+          <div class="pin" style="top:49%;left:89.5%;width:7.5%;height:6.5%;"><span class="lbl">开通</span></div>
+        </div>
+        <figcaption>系统管理 → 开通管理 →「大模型」标签页。把「录音文件识别 1.0」和「2.0」各点一次「开通」（都免费送额度）。<b>1.0 里含极速版+标准版，2.0 是 2.0 档；漏开 App 用到时会失败。</b></figcaption>
+      </figure>
+    </li>
+    <li><b>开通后，去「API Key 管理」拿钥匙。</b><br>
+      <span class="note tip" style="display:block;margin:8px 0;">📍 <b>这个页面在哪？</b>在<b>左侧导航栏</b>往下划到底，「<b>系统管理</b>」分组里（「开通管理、用量统计」下面）就是「<b>API Key 管理</b>」，点它进入。</span>
+      进入后，平台已自动建好一把（名字像「默认体验中心使用」），点钥匙后面的「👁 眼睛」看到完整的、点复制即可；或点左上「+ 创建 API Key」建个新的。
+      <figure>
+        <div class="shot">
+          <img src="guide-assets/g_volc_apikey.png" alt="火山语音 API Key 管理页">
+          <div class="mask" style="top:0;right:0;width:10%;height:9%;"></div>
+          <div class="pin" style="top:17.5%;left:14%;width:12%;height:6%;"><span class="lbl">想建新的点这</span></div>
+          <div class="pin" style="top:29%;left:51.5%;width:9%;height:6%;"><span class="lbl">点👁看完整→复制</span></div>
+        </div>
+        <figcaption>「API Key 管理」页（入口见上方提示）。左上「+ 创建 API Key」可建新钥匙；默认那把点「👁 眼睛」看完整、复制即可。</figcaption>
+      </figure>
+    </li>
+  </ol>
+
+  <!-- STEP 4 -->
+  <div class="step-h"><span class="step-n">4</span><div>
+    <h2>把钥匙填进 Typefree</h2>
+  </div></div>
+  <ol class="steps">
+    <li>打开 Typefree <b>设置 → 模型</b>。</li>
+    <li><b>「语音识别」选服务商：</b>用阿里就选「百炼（阿里）」，用豆包就选「火山引擎（豆包）」。</li>
+    <li>把刚才复制的钥匙<b>粘进 API Key 框</b>。</li>
+    <li><b>点「测试连接」，看到 ✓ 就成功了！</b></li>
+    <li><b>润色同理：</b>「语音优化」选「百炼（阿里）」。<b>如果识别也用了阿里，这里会自动复用同一把钥匙，不用再填。</b></li>
+  </ol>
+
+  <!-- FAQ -->
+  <div class="step-h"><span class="step-n">?</span><div><h2>常见问题</h2></div></div>
+  <details><summary>找不到「API Key」菜单怎么办？</summary>
+    <p>阿里：在控制台<b>左侧菜单最下面</b>。火山：在左侧<b>「系统管理」</b>下面的「API Key 管理」。</p></details>
+  <details><summary>免费额度能用多久？会偷偷扣钱吗？</summary>
+    <p>阿里 90 天、火山半年，<b>到期作废、不是永久</b>。⚠️ 阿里额度用完后会<b>自动扣费</b>，建议进阿里控制台打开「免费额度用完即停」开关，就绝不会偷偷扣钱了。</p></details>
+  <details><summary>点「测试连接」失败？</summary>
+    <p>八成是钥匙没复制全（前后带了空格），或者服务商选错了。重新复制完整钥匙、确认选对「百炼（阿里）」还是「火山引擎（豆包）」再试。</p></details>
+
+  <!-- 词典 -->
+  <div class="step-h"><span class="step-n">✦</span><div><h2>看不懂的词，这里查</h2></div></div>
+  <div class="dict">
+    <div><b>API Key</b>：一把「钥匙」，让 App 能用你账号下的 AI 服务。</div>
+    <div><b>控制台</b>：服务商的网站后台，管理你账号的地方。</div>
+    <div><b>百炼 / DashScope</b>：阿里的 AI 平台，识别和润色都在它上面。</div>
+    <div><b>豆包语音 / 火山引擎</b>：火山（字节）的语音 AI，识别用它。</div>
+  </div>
+
+</div>
+
+<footer><div class="wrap">Typefree · 你的语音、你的 API、你的数据 —— 全在你自己手里。</div></footer>
+</body>
+</html>

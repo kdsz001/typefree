@@ -123,6 +123,16 @@
   details p{color:var(--ink2);font-size:14.5px;line-height:1.6;padding:0 0 15px;}
 
   footer{padding:46px 0 64px;color:var(--ink3);font-size:13px;text-align:center;border-top:1px solid var(--line2);margin-top:48px;}
+  /* —— 左侧目录导航 —— */
+  .doc-wrap{width:min(1160px,calc(100% - 44px));margin:0 auto;display:flex;gap:46px;align-items:flex-start;}
+  .toc{position:sticky;top:74px;width:226px;flex-shrink:0;max-height:calc(100vh - 96px);overflow-y:auto;padding:2px 0 8px;}
+  .toc-title{font-size:11.5px;font-weight:700;letter-spacing:.09em;color:var(--ink3);margin:0 0 9px 13px;}
+  .toc a{display:block;padding:7px 13px;color:var(--ink2);text-decoration:none;border-left:2px solid var(--line);line-height:1.4;font-size:14px;border-radius:0 7px 7px 0;transition:background .15s,color .15s,border-color .15s;}
+  .toc a:hover{color:var(--ink);background:var(--alt);}
+  .toc a.active{color:var(--ok);border-left-color:var(--ok);background:var(--ok-soft);font-weight:600;}
+  .doc-main{flex:1;min-width:0;max-width:840px;}
+  .step-h[id]{scroll-margin-top:74px;}
+  @media(max-width:920px){.doc-wrap{display:block;}.toc{display:none;}.doc-main{max-width:none;}}
 </style>
 </head>
 <body>
@@ -137,7 +147,19 @@
   <p class="lead">完全没接触过也别怕。跟着下面的图一步步点，几分钟就行。每个看不懂的词，我都给你翻译成人话。</p>
 </div></header>
 
-<div class="wrap">
+<div class="doc-wrap">
+
+<aside class="toc">
+  <div class="toc-title">目录</div>
+  <a href="#s-plan">先选一个方案</a>
+  <a href="#s-ali">拿阿里的钥匙</a>
+  <a href="#s-volc">拿火山的钥匙</a>
+  <a href="#s-fill">填进 Typefree</a>
+  <a href="#s-faq">常见问题</a>
+  <a href="#s-dict">术语词典</a>
+</aside>
+
+<div class="doc-main">
 
   <div class="note">
     <b>先说清楚：API Key 是啥？</b><br>
@@ -146,7 +168,7 @@
   </div>
 
   <!-- STEP 1 -->
-  <div class="step-h"><span class="step-n">1</span><div>
+  <div class="step-h" id="s-plan"><span class="step-n">1</span><div>
     <h2>先选一个方案</h2>
     <p class="sub">Typefree 帮你干两件事：把话变成字（识别，必须）+ 把字理顺（润色，可选）。这两件事可以用阿里、也可以用火山（豆包）。给你两个推荐方案：</p>
   </div></div>
@@ -169,7 +191,7 @@
   <p class="sub" style="margin-top:16px;">选好了？按你选的方案往下看：<b>全用阿里只看第 2 步；要用豆包识别的，再加看第 3 步。</b></p>
 
   <!-- STEP 2: 阿里 -->
-  <div class="step-h"><span class="step-n">2</span><div>
+  <div class="step-h" id="s-ali"><span class="step-n">2</span><div>
     <h2>拿阿里的钥匙</h2>
     <p class="sub">这把钥匙识别和润色都能用（同一个）。两个方案都需要它。</p>
   </div></div>
@@ -228,7 +250,7 @@
   </ol>
 
   <!-- STEP 3: 火山 -->
-  <div class="step-h"><span class="step-n">3</span><div>
+  <div class="step-h" id="s-volc"><span class="step-n">3</span><div>
     <h2>拿火山（豆包）的钥匙</h2>
     <p class="sub">只有「豆包识别 + 阿里润色」方案才需要这一步。全用阿里的可以跳过。</p>
   </div></div>
@@ -275,7 +297,7 @@
   </ol>
 
   <!-- STEP 4 -->
-  <div class="step-h"><span class="step-n">4</span><div>
+  <div class="step-h" id="s-fill"><span class="step-n">4</span><div>
     <h2>把钥匙填进 Typefree</h2>
   </div></div>
   <ol class="steps">
@@ -287,7 +309,7 @@
   </ol>
 
   <!-- FAQ -->
-  <div class="step-h"><span class="step-n">?</span><div><h2>常见问题</h2></div></div>
+  <div class="step-h" id="s-faq"><span class="step-n">?</span><div><h2>常见问题</h2></div></div>
   <details><summary>找不到「API Key」菜单怎么办？</summary>
     <p>阿里：在控制台<b>左侧菜单最下面</b>。火山：在左侧<b>「系统管理」</b>下面的「API Key 管理」。</p></details>
   <details><summary>免费额度能用多久？会偷偷扣钱吗？</summary>
@@ -296,7 +318,7 @@
     <p>八成是钥匙没复制全（前后带了空格），或者服务商选错了。重新复制完整钥匙、确认选对「百炼（阿里）」还是「火山引擎（豆包）」再试。</p></details>
 
   <!-- 词典 -->
-  <div class="step-h"><span class="step-n">✦</span><div><h2>看不懂的词，这里查</h2></div></div>
+  <div class="step-h" id="s-dict"><span class="step-n">✦</span><div><h2>看不懂的词，这里查</h2></div></div>
   <div class="dict">
     <div><b>API Key</b>：一把「钥匙」，让 App 能用你账号下的 AI 服务。</div>
     <div><b>控制台</b>：服务商的网站后台，管理你账号的地方。</div>
@@ -304,8 +326,28 @@
     <div><b>豆包语音 / 火山引擎</b>：火山（字节）的语音 AI，识别用它。</div>
   </div>
 
-</div>
+</div><!-- /.doc-main -->
+</div><!-- /.doc-wrap -->
 
 <footer><div class="wrap">Typefree · 你的语音、你的 API、你的数据 —— 全在你自己手里。</div></footer>
+<script>
+(function(){
+  var links = Array.prototype.slice.call(document.querySelectorAll('.toc a'));
+  var secs = links.map(function(a){ return document.getElementById(a.getAttribute('href').slice(1)); });
+  function spy(){
+    var cur = 0;
+    for(var i=0;i<secs.length;i++){ if(secs[i] && secs[i].getBoundingClientRect().top <= 100) cur = i; }
+    links.forEach(function(a,i){ a.classList.toggle('active', i===cur); });
+  }
+  window.addEventListener('scroll', spy, {passive:true});
+  window.addEventListener('resize', spy);
+  spy();
+  links.forEach(function(a){ a.addEventListener('click', function(e){
+    e.preventDefault();
+    var el = document.getElementById(a.getAttribute('href').slice(1));
+    if(el) el.scrollIntoView({behavior:'smooth', block:'start'});
+  }); });
+})();
+</script>
 </body>
 </html>

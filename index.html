@@ -138,8 +138,8 @@
   .val p{color:var(--ink2);font-size:15.5px;line-height:1.6;}
 
   /* ===== 效果 · 真实案例 ===== */
-  .cases{display:grid;grid-template-columns:1fr 1fr;gap:18px;}
-  .case{padding:24px 26px;border:1px solid var(--line);border-radius:var(--r);background:var(--card);display:flex;flex-direction:column;gap:13px;}
+  .cases{column-count:2;column-gap:18px;}
+  .case{break-inside:avoid;margin-bottom:18px;padding:24px 26px;border:1px solid var(--line);border-radius:var(--r);background:var(--card);display:flex;flex-direction:column;gap:13px;}
   .case-tag{align-self:flex-start;height:27px;padding:0 12px;border-radius:999px;background:var(--alt);color:var(--ink2);font-size:12.5px;font-weight:650;display:inline-flex;align-items:center;}
   .case-label{color:var(--ink3);font-size:11.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;}
   .c-from{margin-top:5px;padding:11px 13px 11px 15px;border-left:2px solid var(--line);border-radius:0 10px 10px 0;background:var(--bg);color:var(--ink3);font-size:14.5px;line-height:1.62;white-space:pre-line;}
@@ -303,7 +303,8 @@
   @media(max-width:760px){
     section{padding:72px 0;}
     .nav-links{display:none;}
-    .demo-body,.values,.adv,.faq,.cases{grid-template-columns:1fr;}
+    .demo-body,.values,.adv,.faq{grid-template-columns:1fr;}
+    .cases{column-count:1;}
     .rec{border-bottom:1px solid var(--line2);}
     .convert{transform:translate(-50%,-50%) rotate(90deg);}
     .sflow{grid-template-columns:1fr 1fr;}

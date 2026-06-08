@@ -1,12 +1,12 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Typefree — 隐私优先、更懂中文的 AI 语音输入</title>
-<meta name="description" content="Typefree 是一个隐私优先的 AI 语音输入工具。按住快捷键说话，自动识别、去掉口水词、理顺句子，把整理好的文字直接落到光标处。录音、数据、API 凭证都在你自己手里。免费版每天 1000 字，买断版无限输入。">
+<title>Typefree — Privacy-first AI voice input</title>
+<meta name="description" content="Typefree is a privacy-first AI voice-input tool. Hold a shortcut and speak; it transcribes, removes filler words, smooths your sentences, and drops the polished text right at your cursor. Your recordings, data and API credentials stay in your own hands. Free tier: 1,000 characters a day. Lifetime version: unlimited.">
 <script>try{history.scrollRestoration='manual';}catch(e){}</script>
-<script>/* 按系统语言/记忆自动跳转语言版本 */(function(){var P="zh-Hans";try{var s=localStorage.getItem("tf_lang");var w=s;if(!w){var n=(navigator.language||"").toLowerCase();w=n.indexOf("en")===0?"en":/hant|tw|hk|mo/.test(n)?"zh-Hant":"zh-Hans";}if(w!==P){var m={"zh-Hans":"index.html","zh-Hant":"index.zh-Hant.html","en":"index.en.html"};var t=m[w];var cur=location.pathname.split("/").pop()||"index.html";if(t&&t!==cur){location.replace(t);}}}catch(e){}})();</script>
+<script>/* 按系统语言/记忆自动跳转语言版本 */(function(){var P="en";try{var s=localStorage.getItem("tf_lang");var w=s;if(!w){var n=(navigator.language||"").toLowerCase();w=n.indexOf("en")===0?"en":/hant|tw|hk|mo/.test(n)?"zh-Hant":"zh-Hans";}if(w!==P){var m={"zh-Hans":"index.html","zh-Hant":"index.zh-Hant.html","en":"index.en.html"};var t=m[w];var cur=location.pathname.split("/").pop()||"index.html";if(t&&t!==cur){location.replace(t);}}}catch(e){}})();</script>
 <style>
   /* ================= 设计令牌：100% 取自 macOS App（SettingsWindowController.swift）================= */
   :root{
@@ -358,12 +358,12 @@
       <span>Typefree</span>
     </a>
     <div class="nav-links">
-      <a href="#effect">效果</a>
-      <a href="#how">原理</a>
-      <a href="#platforms">全平台</a>
-      <a href="#security">安全</a>
-      <a href="#pricing">价格</a>
-      <a href="setup-guide.html">配置教程</a>
+      <a href="#effect">Examples</a>
+      <a href="#how">How it works</a>
+      <a href="#platforms">Platforms</a>
+      <a href="#security">Security</a>
+      <a href="#pricing">Pricing</a>
+      <a href="setup-guide.html">Setup guide</a>
     </div>
     <div class="nav-cta">
       <div class="langsw" id="langsw">
@@ -371,7 +371,7 @@
         <a href="index.zh-Hant.html" data-l="zh-Hant">繁</a>
         <a href="index.en.html" data-l="en">EN</a>
       </div>
-      <a class="btn primary" href="https://github.com/kdsz001/typefree/releases">下载 Mac 版</a>
+      <a class="btn primary" href="https://github.com/kdsz001/typefree/releases">Download for Mac</a>
     </div>
   </div>
 </nav>
@@ -381,47 +381,47 @@
 <!-- ===================== Hero ===================== -->
 <header class="hero">
   <div class="wrap hero-inner">
-    <div class="eyebrow"><span class="dot"></span><b>隐私优先</b> · 本地存储 · 自带 API Key</div>
-    <h1>更懂中文的 AI 语音输入，<br class="hb">把口语变成<span class="grey">能直接用的</span>文字。</h1>
-    <p class="sub">按住快捷键说话，松手即自动识别、去掉口水词、理顺句子，整理好的结果直接落到光标处。录音、数据、API 凭证，全都在你自己手里。</p>
+    <div class="eyebrow"><span class="dot"></span><b>Privacy-first</b> · Stored on your device · Bring your own API key</div>
+    <h1>Turn speech into text<br class="hb">you can <span class="grey">use right away</span>.</h1>
+    <p class="sub">Hold a shortcut and speak. Let go, and it transcribes, removes filler words, smooths the sentences, and drops the polished result right at your cursor. Your recordings, data and API credentials all stay in your own hands.</p>
     <div class="cta">
-      <a class="btn primary lg" href="https://github.com/kdsz001/typefree/releases"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>免费下载 Mac 版</a>
-      <a class="btn lg" href="#pricing">查看价格 →</a>
+      <a class="btn primary lg" href="https://github.com/kdsz001/typefree/releases"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>Download free for Mac</a>
+      <a class="btn lg" href="#pricing">See pricing →</a>
     </div>
     <div class="trust">
       <span><i class="g"></i>macOS 12+</span>
-      <span><i class="g"></i>已签名 · 已公证</span>
-      <span><i class="g"></i>一次买断 · 不订阅</span>
-      <span><i class="g"></i>同源支持 iPhone / 输入法键盘</span>
+      <span><i class="g"></i>Signed · Notarized</span>
+      <span><i class="g"></i>One-time purchase · No subscription</span>
+      <span><i class="g"></i>Also on iPhone / keyboard</span>
     </div>
 
     <!-- 产品演示卡 -->
     <div class="demo win">
       <div class="win-top">
         <div class="traffic"><i></i><i></i><i></i></div>
-        <div class="win-title">Typefree · 正在整理一段口述</div>
+        <div class="win-title">Typefree · Cleaning up a dictation</div>
       </div>
       <div class="demo-body">
         <div class="rec">
-          <div class="tag"><span class="live"></span>正在听写</div>
+          <div class="tag"><span class="live"></span>Listening…</div>
           <div class="wave"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
-          <p class="raw"><del>我</del>我看了<del>那个</del>流程，我觉得<del>就是</del>他的整体的图标和排版，还有文字<del>的话</del>，我觉得要优化一下，要考虑居中<del>啊</del>，要考虑。排列好看一些，不然我感觉<del>那个</del>背后背景很空，<del>然后</del>文字<del>呢又</del>，<del>很很</del>很紧密，然后还要靠，还有点靠上。就感觉排版不是很好<del>吧</del>。</p>
+          <p class="raw"><del>So</del> So I looked at <del>the</del> the flow, and I think <del>like</del> the overall icons and layout, and the text <del>too</del>, I think we should optimize it — consider centering <del>you know</del>, consider… arranging it nicer, otherwise <del>the</del> the background feels empty, <del>and then</del> the text <del>is just</del> too cramped, and it sits a bit too high. The layout just doesn't feel great <del>I guess</del>.</p>
         </div>
         <div class="convert"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg></div>
         <div class="out">
-          <div class="tag">整理后输出</div>
-          <div class="out-text">我看了那个流程，觉得整体的图标、排版和文字都需要优化一下。
+          <div class="tag">Cleaned-up output</div>
+          <div class="out-text">I looked at the flow, and I think the overall icons, layout and text all need some optimization.
 
-主要要考虑以下几点：
-1. 考虑居中，让排列更好看一些；
-2. 目前感觉背后背景很空，但文字又很紧密；
-3. 位置还有点靠上。
+Main things to consider:
+1. Center it so the arrangement looks nicer;
+2. Right now the background feels empty while the text is too cramped;
+3. The position is a bit too high.
 
-整体感觉排版不是很好。</div>
+Overall, the layout doesn't feel great.</div>
           <div class="chain">
-            <span class="chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>云端识别</span>
-            <span class="chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>AI 整理</span>
-            <span class="chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>自动分段</span>
+            <span class="chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Cloud recognition</span>
+            <span class="chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>AI clean-up</span>
+            <span class="chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Auto paragraphs</span>
           </div>
         </div>
       </div>
@@ -433,29 +433,29 @@
 <section>
   <div class="wrap">
     <div class="sec-head center reveal">
-      <span class="kicker">为什么选 Typefree</span>
-      <h2>和订阅制工具一样好用，<br>但数据和凭证，都在你自己手里。</h2>
+      <span class="kicker">Why Typefree</span>
+      <h2>As capable as subscription tools,<br>but your data and credentials stay yours.</h2>
     </div>
     <div class="values">
       <div class="val reveal">
         <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg></span>
-        <h3>诚实透明</h3>
-        <p>录音、识别、整理、回填——每一步去了哪里都讲清楚。该上云的那一步老实告诉你，绝不把云端调用包装成"全本地"。</p>
+        <h3>Honest &amp; transparent</h3>
+        <p>Recording, recognition, clean-up, paste-back — we tell you exactly where each step goes. We're honest about the one step that uses the cloud, and never dress up cloud calls as &ldquo;fully offline&rdquo;.</p>
       </div>
       <div class="val reveal">
         <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span>
-        <h3>数据本地优先</h3>
-        <p>录音、历史记录、API 凭证默认都保存在你自己的设备上，不经过我们的任何中转服务器。</p>
+        <h3>Local-first data</h3>
+        <p>Recordings, history and API credentials are stored on your own device by default, never passing through any server of ours.</p>
       </div>
       <div class="val reveal">
         <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg></span>
-        <h3>自带云服务（BYOK）</h3>
-        <p>用你自己的火山 / 通义 / 智谱账号，识别与润色模型自由切换，不被单一服务锁定，我们也不替你计费。</p>
+        <h3>Bring your own cloud (BYOK)</h3>
+        <p>Use your own Volcengine / Qwen / Zhipu accounts. Switch recognition and clean-up models freely, never locked to one provider — and we never bill you.</p>
       </div>
       <div class="val reveal">
         <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></span>
-        <h3>稳定同源</h3>
-        <p>Mac、iPhone、输入法键盘共用一套核心代码，附带单元测试与 CI 编译验证，长期放进工作流也放心。</p>
+        <h3>One stable codebase</h3>
+        <p>Mac, iPhone and the keyboard share one core codebase, with unit tests and CI build checks — dependable enough to live in your daily workflow.</p>
       </div>
     </div>
   </div>
@@ -465,64 +465,64 @@
 <section id="effect" class="soft">
   <div class="wrap">
     <div class="sec-head reveal">
-      <span class="kicker">真实效果</span>
-      <h2>它不是录音稿，<br>是你本来就想发出去的那句话。</h2>
-      <p>下面四段都是用<strong>真实产品链路</strong>跑出的效果示例——左边随口一说，右边是 Typefree 自动整理后的结果：删口水词、改口误、理顺句子、分段列点、规范数字和术语。</p>
+      <span class="kicker">Real results</span>
+      <h2>Not a raw transcript —<br>the sentence you actually meant to send.</h2>
+      <p>These four are real output from <strong>the real product pipeline</strong> — casual spoken takes on the left, Typefree's automatic clean-up on the right: fillers removed, slips fixed, sentences smoothed, points split out, numbers and terms normalized.</p>
     </div>
     <div class="cases">
       <div class="case reveal">
-        <span class="case-tag">改口 · 自动修正</span>
+        <span class="case-tag">Self-correction · Auto-fix</span>
         <div>
-          <span class="case-label">随口说</span>
-          <p class="c-from">我周五下午可以过去，<del>不对，周五不行，</del>是周四下午，三点以后都可以，你帮我约一下。</p>
+          <span class="case-label">Said casually</span>
+          <p class="c-from">I can come Friday afternoon, <del>no wait, not Friday,</del> it's Thursday afternoon, anytime after 3 — can you set it up?</p>
         </div>
         <div>
-          <span class="case-label">整理后</span>
-          <p class="c-to">我周四下午三点以后都可以，你帮我约一下。</p>
-        </div>
-      </div>
-      <div class="case reveal">
-        <span class="case-tag">日记 · 情绪整理</span>
-        <div>
-          <span class="case-label">随口说</span>
-          <p class="c-from">今天有点开心，但也有点烦。开心是因为那个功能终于有人说有用了，烦的是我发现后面还有一堆细节要补。<del>就是</del>一边觉得有希望，一边又觉得事情变多了。可能这就是产品真的开始被用起来以后的感觉吧。</p>
-        </div>
-        <div>
-          <span class="case-label">整理后</span>
-          <p class="c-to">今天有点开心，但也有点烦。&#10;&#10;开心是因为那个功能终于有人说有用了；烦的是我发现后面还有一堆细节要补。就是一边觉得有希望，一边又觉得事情变多了。&#10;&#10;可能这就是产品真的开始被用起来以后的感觉吧。</p>
+          <span class="case-label">Cleaned up</span>
+          <p class="c-to">Thursday afternoon, anytime after 3 works for me — can you set it up?</p>
         </div>
       </div>
       <div class="case reveal">
-        <span class="case-tag">写代码 · 排查指令</span>
+        <span class="case-tag">Journal · Tidying feelings</span>
         <div>
-          <span class="case-label">随口说</span>
-          <p class="c-from">你帮我改一下这个登录页，先别大改，<del>呃不对，</del>先看一下为什么按钮一直转圈。然后如果是前端状态没恢复就修前端，如果是接口没返回就把错误提示补上。还有不要动注册页，最后跑一下测试。</p>
+          <span class="case-label">Said casually</span>
+          <p class="c-from">I'm a bit happy today, but also a bit annoyed. Happy because someone finally said that feature is useful; annoyed because I found a whole pile of details still to fill in. <del>Like</del> on one hand it feels promising, on the other there's more to do. Maybe this is just what it feels like once a product actually starts getting used.</p>
         </div>
         <div>
-          <span class="case-label">整理后</span>
-          <p class="c-to">你帮我改一下这个登录页。先别大改，先看一下为什么按钮一直转圈。&#10;&#10;1. 如果是前端状态没恢复，就修前端；&#10;2. 如果是接口没返回，就把错误提示补上。&#10;&#10;还有，不要动注册页，最后跑一下测试。</p>
+          <span class="case-label">Cleaned up</span>
+          <p class="c-to">I'm a bit happy today, but also a bit annoyed.&#10;&#10;Happy because someone finally said that feature is useful; annoyed because I found a whole pile of details still to fill in. On one hand it feels promising, on the other there's suddenly more to do.&#10;&#10;Maybe this is just what it feels like once a product really starts getting used.</p>
         </div>
       </div>
       <div class="case reveal">
-        <span class="case-tag">数字 · 金额规范</span>
+        <span class="case-tag">Coding · Debug instructions</span>
         <div>
-          <span class="case-label">随口说</span>
-          <p class="c-from">这个报价我算了一下，基础版大概三千六一年，专业版差不多九千八一年，如果买三年，应该能便宜两成左右。</p>
+          <span class="case-label">Said casually</span>
+          <p class="c-from">Can you fix this login page — <del>uh no,</del> don't overhaul it, first look at why the button keeps spinning. Then if the frontend state isn't resetting, fix the frontend; if the API isn't responding, add the error message. Also don't touch the signup page, and run the tests at the end.</p>
         </div>
         <div>
-          <span class="case-label">整理后</span>
-          <p class="c-to">这个报价我算了一下：&#10;&#10;1. 基础版大概 3600 元一年；&#10;2. 专业版差不多 9800 元一年。&#10;&#10;如果买三年，应该能便宜两成左右。</p>
+          <span class="case-label">Cleaned up</span>
+          <p class="c-to">Can you fix this login page. Don't overhaul it — first look at why the button keeps spinning.&#10;&#10;1. If the frontend state isn't resetting, fix the frontend;&#10;2. If the API isn't responding, add the error message.&#10;&#10;Also, don't touch the signup page, and run the tests at the end.</p>
+        </div>
+      </div>
+      <div class="case reveal">
+        <span class="case-tag">Numbers · Currency formatting</span>
+        <div>
+          <span class="case-label">Said casually</span>
+          <p class="c-from">I worked out the quote — the basic plan is around 3,600 a year, the pro plan about 9,800 a year, and buying three years should be about 20% cheaper.</p>
+        </div>
+        <div>
+          <span class="case-label">Cleaned up</span>
+          <p class="c-to">I worked out the quote:&#10;&#10;1. Basic plan: about &yen;3,600 a year;&#10;2. Pro plan: about &yen;9,800 a year.&#10;&#10;Buying three years should be about 20% cheaper.</p>
         </div>
       </div>
     </div>
     <div class="cap-row reveal">
-      <span class="cap-chip">口语整理</span>
-      <span class="cap-chip">自动分段</span>
-      <span class="cap-chip">列表化</span>
-      <span class="cap-chip">口误修正</span>
-      <span class="cap-chip">数字规范</span>
-      <span class="cap-chip">术语纠正</span>
-      <span class="cap-chip">标点修正</span>
+      <span class="cap-chip">Speech clean-up</span>
+      <span class="cap-chip">Auto paragraphs</span>
+      <span class="cap-chip">Bullet points</span>
+      <span class="cap-chip">Slip correction</span>
+      <span class="cap-chip">Number formatting</span>
+      <span class="cap-chip">Term correction</span>
+      <span class="cap-chip">Punctuation fixes</span>
     </div>
   </div>
 </section>
@@ -531,54 +531,54 @@
 <section id="how">
   <div class="wrap">
     <div class="sec-head center reveal">
-      <span class="kicker">怎么工作</span>
-      <h2>四步，从一句话到落字。</h2>
-      <p>整个过程通常一两秒完成，每一步都看得见、查得到。</p>
+      <span class="kicker">How it works</span>
+      <h2>Four steps, from a sentence to text on screen.</h2>
+      <p>The whole thing usually takes a second or two, and every step is visible and traceable.</p>
     </div>
     <div class="flow">
       <div class="step reveal">
-        <span class="num">1</span><h3>本机录音</h3>
-        <p>按住你设定的快捷键采集音频，松手即停，立刻进入处理。</p>
+        <span class="num">1</span><h3>Record locally</h3>
+        <p>Hold your chosen shortcut to capture audio; release to stop and processing begins immediately.</p>
         <span class="arr"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></span>
       </div>
       <div class="step reveal">
-        <span class="num">2</span><h3>云端识别</h3>
-        <p>调用你配置的 ASR 服务商，把语音转成文字，并注入你的热词。</p>
+        <span class="num">2</span><h3>Cloud recognition</h3>
+        <p>Calls the ASR provider you configured to turn speech into text, injecting your hot words.</p>
         <span class="arr"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></span>
       </div>
       <div class="step reveal">
-        <span class="num">3</span><h3>AI 整理</h3>
-        <p>较长的内容交给你配置的大模型，去口水词、理顺句子、规范格式。</p>
+        <span class="num">3</span><h3>AI clean-up</h3>
+        <p>Longer passages go to the LLM you configured to remove fillers, smooth sentences and tidy formatting.</p>
         <span class="arr"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></span>
       </div>
       <div class="step reveal">
-        <span class="num">4</span><h3>术语纠正 · 落字</h3>
-        <p>按你的术语表做最后替换，整理好的文字直接粘贴到光标处。</p>
+        <span class="num">4</span><h3>Term fix · Paste</h3>
+        <p>A final pass applies your glossary, then the polished text is pasted straight at your cursor.</p>
       </div>
     </div>
 
     <div class="panel win reveal">
       <div class="win-top">
         <div class="traffic"><i></i><i></i><i></i></div>
-        <div class="win-title">Typefree · 今日概览</div>
+        <div class="win-title">Typefree · Today</div>
       </div>
       <div class="panel-body">
         <div class="stats">
-          <div class="stat"><div class="n">5,042<small>字</small></div><div class="l">今日输入</div></div>
-          <div class="stat"><div class="n">38<small>次</small></div><div class="l">今日会话</div></div>
-          <div class="stat"><div class="n">1.9<small>秒</small></div><div class="l">平均出字</div></div>
-          <div class="stat"><div class="n">216</div><div class="l">累计记录</div></div>
+          <div class="stat"><div class="n">5,042<small></small></div><div class="l">Chars today</div></div>
+          <div class="stat"><div class="n">38<small></small></div><div class="l">Sessions today</div></div>
+          <div class="stat"><div class="n">1.9<small>s</small></div><div class="l">Avg. latency</div></div>
+          <div class="stat"><div class="n">216</div><div class="l">Total entries</div></div>
         </div>
         <div class="recent">
-          <div class="rh"><span>最近识别</span><span class="more">全部记录 →</span></div>
-          <div class="rec-row"><div class="f"><span class="um">嗯</span>这个版本先别急着发，<span class="um">那个</span>等我确认一下数据。</div><div class="t">这个版本先别急着发，等我确认一下数据。</div></div>
-          <div class="rec-row"><div class="f">帮我写个 prompt，<span class="um">就是说</span>让它把会议纪要整理成待办。</div><div class="t">帮我写个 Prompt：把会议纪要整理成待办清单。</div></div>
-          <div class="rec-row"><div class="f">周四上午十点跟 claude 那边对一下 cursor 的方案。</div><div class="t">周四上午 10:00 跟 Claude 那边对一下 Cursor 的方案。</div></div>
+          <div class="rh"><span>Recent</span><span class="more">All entries →</span></div>
+          <div class="rec-row"><div class="f"><span class="um">Um</span> let's not ship this version yet, <span class="um">you know</span> let me double-check the data first.</div><div class="t">Let's not ship this version yet — let me double-check the data first.</div></div>
+          <div class="rec-row"><div class="f">Write me a prompt, <span class="um">like</span> to turn meeting notes into a to-do list.</div><div class="t">Write me a prompt: turn meeting notes into a to-do list.</div></div>
+          <div class="rec-row"><div class="f">Thursday 10am sync with claude on the cursor plan.</div><div class="t">Thursday 10:00 AM — sync with Claude on the Cursor plan.</div></div>
         </div>
         <div class="panel-foot">
-          <span class="svc"><i class="g"></i>火山引擎 · 已配置</span>
-          <span class="svc"><i class="g"></i>通义千问 · 已配置</span>
-          <span class="svc"><i class="g"></i>历史本地保留</span>
+          <span class="svc"><i class="g"></i>Volcengine · Configured</span>
+          <span class="svc"><i class="g"></i>Qwen · Configured</span>
+          <span class="svc"><i class="g"></i>History kept locally</span>
         </div>
       </div>
     </div>
@@ -589,39 +589,39 @@
 <section id="platforms" class="soft">
   <div class="wrap">
     <div class="sec-head center reveal">
-      <span class="kicker">全平台</span>
-      <h2>一套核心，三个地方都能说。</h2>
-      <p>Mac、iPhone、输入法键盘共用同一套核心代码——同样的识别、同样的整理、同样的热词，行为完全一致。</p>
+      <span class="kicker">Every platform</span>
+      <h2>One core, speak from three places.</h2>
+      <p>Mac, iPhone and the keyboard share the same core code — same recognition, same clean-up, same hot words, identical behavior everywhere.</p>
     </div>
     <div class="platforms">
       <div class="plat reveal">
         <span class="pic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg></span>
-        <h3>macOS <span class="badge live">可下载</span></h3>
-        <p>常驻菜单栏。在任意输入框按住快捷键说话，浮窗实时显示音量和进度，松手自动落字。</p>
+        <h3>macOS <span class="badge live">Available</span></h3>
+        <p>Lives in your menu bar. Hold the shortcut in any text field and speak; a floating window shows volume and progress, and text lands automatically when you let go.</p>
         <ul>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>全局快捷键，按住或轻点切换</li>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>本地历史 + 原始音频可回看</li>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Developer ID 签名 + 公证</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Global shortcut, hold or tap to toggle</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Local history + replayable original audio</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Developer ID signed + notarized</li>
         </ul>
       </div>
       <div class="plat reveal">
         <span class="pic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="3"/><path d="M11 18h2"/></svg></span>
-        <h3>iPhone App <span class="badge soon">同源支持</span></h3>
-        <p>手机上的语音整理。长按说话，查看输入统计与历史，和 Mac 共享同一套配置与词库。</p>
+        <h3>iPhone App <span class="badge soon">Same core</span></h3>
+        <p>Voice clean-up on your phone. Press and hold to speak, view input stats and history, and share the same config and glossary as your Mac.</p>
         <ul>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>长按 / 快按两种说话方式</li>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>输入统计与今日/本周字数</li>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>配置可从 Mac 一键导入</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Press-and-hold or quick-tap to speak</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Input stats and daily/weekly counts</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Import config from Mac in one tap</li>
         </ul>
       </div>
       <div class="plat reveal">
         <span class="pic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M8 14h8"/></svg></span>
-        <h3>输入法键盘 <span class="badge soon">同源支持</span></h3>
-        <p>系统级自定义键盘。在任何 App 里点一下麦克风就能说话，整理好的文字直接落到当前输入框。</p>
+        <h3>Keyboard <span class="badge soon">Same core</span></h3>
+        <p>A system-wide custom keyboard. Tap the mic in any app to speak, and the polished text lands right in the current field.</p>
         <ul>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>任意 App 内可用</li>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>波形与进度实时反馈</li>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>撤销 / 重做上一次输入</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Works inside any app</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Live waveform and progress</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Undo / redo the last input</li>
         </ul>
       </div>
     </div>
@@ -632,31 +632,31 @@
 <section id="security" class="secure">
   <div class="wrap">
     <div class="sec-head reveal">
-      <span class="kicker">安全</span>
-      <h2>你的话去了哪里，<br>写得清清楚楚。</h2>
-      <p>我们主打安全，但不把云端调用包装成"完全离线"。该上云的那一步老实告诉你，其余尽量留在你自己手里。</p>
+      <span class="kicker">Security</span>
+      <h2>Where your words go,<br>spelled out clearly.</h2>
+      <p>We lead with privacy, but we never dress up cloud calls as &ldquo;fully offline.&rdquo; We're honest about the step that uses the cloud, and keep everything else in your own hands.</p>
     </div>
     <div class="sflow reveal">
       <div class="sstep">
         <span class="si"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/></svg></span>
-        <b>本机录音</b><p>音频在你的设备上采集，松手后才进入处理流程。</p>
+        <b>Local recording</b><p>Audio is captured on your device and only enters processing after you let go.</p>
       </div>
       <div class="sstep">
         <span class="si"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg></span>
-        <b>直达你的服务商</b><p>请求直接发给你配置的 ASR 和大模型，不经过我们的中转服务器。</p>
+        <b>Straight to your provider</b><p>Requests go directly to the ASR and LLM you configured — never through a server of ours.</p>
       </div>
       <div class="sstep">
         <span class="si"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 4 5v6c0 5 3.4 7.8 8 9 4.6-1.2 8-4 8-9V5Z"/></svg></span>
-        <b>凭证留本地</b><p>API Key、历史记录、原始音频优先保存在你自己的设备上。</p>
+        <b>Credentials stay local</b><p>API keys, history and original audio are kept on your own device first.</p>
       </div>
       <div class="sstep">
         <span class="si"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></span>
-        <b>本地回填</b><p>整理结果经术语纠正后，直接粘贴回你的光标处。</p>
+        <b>Local paste-back</b><p>After a glossary pass, the result is pasted straight back at your cursor.</p>
       </div>
     </div>
     <div class="boundary">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
-      <p><b>更准确的说法是：</b>你的请求直达你自己配置的云服务商，不走 Typefree 的中转；该上云的那一步我们也老实告诉你，绝不包装成"全本地"。</p>
+      <p><b>To be precise:</b> your requests go straight to the cloud providers you configured, not through Typefree — and we're honest about the step that uses the cloud, never passing it off as &ldquo;fully offline.&rdquo;</p>
     </div>
   </div>
 </section>
@@ -665,49 +665,49 @@
 <section>
   <div class="wrap">
     <div class="sec-head reveal">
-      <span class="kicker">进阶</span>
-      <h2>给愿意调的人，留足了空间。</h2>
-      <p>小白照默认就能用；专业用户可以换模型、调词库、查历史，把它精确地嵌进自己的工作流。</p>
+      <span class="kicker">Advanced</span>
+      <h2>Plenty of room for those who like to tweak.</h2>
+      <p>Beginners can run on defaults; power users can swap models, tune the glossary and review history to fit it precisely into their workflow.</p>
     </div>
     <div class="adv">
       <div class="advc reveal">
         <div class="ah">
           <span class="ai"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M9 9h6v6H9z"/></svg></span>
-          <h3>多模型自由切换</h3>
+          <h3>Switch models freely</h3>
         </div>
-        <p>识别用火山引擎 BigASR；润色可在通义千问、智谱 GLM、豆包之间随时切换，按成本和效果自己选。</p>
+        <p>Recognition uses Volcengine BigASR; for clean-up, switch anytime between Qwen, Zhipu GLM and Doubao, choosing by cost and quality.</p>
         <div class="model-row">
-          <span class="tagm on">通义千问</span>
-          <span class="tagm">智谱 GLM</span>
-          <span class="tagm">豆包 Doubao</span>
-          <span class="tagm">不润色 · 直出</span>
+          <span class="tagm on">Qwen</span>
+          <span class="tagm">Zhipu GLM</span>
+          <span class="tagm">Doubao</span>
+          <span class="tagm">No polish · Raw</span>
         </div>
       </div>
       <div class="advc reveal">
         <div class="ah">
           <span class="ai"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7V5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v2"/><path d="M9 20h6"/><path d="M12 4v16"/></svg></span>
-          <h3>热词与术语表</h3>
+          <h3>Hot words &amp; glossary</h3>
         </div>
-        <p>把容易识别错的产品名、人名、英文工具名加进词库，可带权重。识别和整理都会优先认它们。</p>
+        <p>Add easily-misheard product names, people and English tool names to your glossary, with optional weights. Both recognition and clean-up will prefer them.</p>
         <div class="hotword">
-          <div class="hw"><b>Cursor</b><span class="w">权重 10</span></div>
-          <div class="hw"><b>Typefree</b><span class="w">权重 8</span></div>
-          <div class="hw"><b>克劳德 → Claude</b><span class="w">术语纠正</span></div>
+          <div class="hw"><b>Cursor</b><span class="w">weight 10</span></div>
+          <div class="hw"><b>Typefree</b><span class="w">weight 8</span></div>
+          <div class="hw"><b>klawd → Claude</b><span class="w">term fix</span></div>
         </div>
       </div>
       <div class="advc reveal">
         <div class="ah">
           <span class="ai"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m7 14 4-4 3 3 5-6"/></svg></span>
-          <h3>历史可查可重放</h3>
+          <h3>Searchable, replayable history</h3>
         </div>
-        <p>每条记录都存在本地，含识别原文、整理结果、用时和用量。可换个模型或加上新热词，重新整理同一段。</p>
+        <p>Every entry is stored locally with the raw transcript, the cleaned result, timing and usage. Swap a model or add new hot words and re-process the same take.</p>
       </div>
       <div class="advc reveal">
         <div class="ah">
           <span class="ai"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><path d="M12 19v3"/></svg></span>
-          <h3>原始音频保留</h3>
+          <h3>Keep original audio</h3>
         </div>
-        <p>可选保留每次的原始录音（macOS），随时回听核对。保留时长自定义——1 天、1 周、1 月或永久。</p>
+        <p>Optionally keep each original recording (macOS) to replay and verify. Set retention yourself — 1 day, 1 week, 1 month or forever.</p>
       </div>
     </div>
   </div>
@@ -717,37 +717,37 @@
 <section id="pricing">
   <div class="wrap">
     <div class="sec-head center reveal">
-      <span class="kicker">价格</span>
-      <h2>免费够用，要更多再买断。</h2>
-      <p>下载即用，每天 1000 字免费。需要无限输入，一次买断、永久使用——不是订阅。</p>
+      <span class="kicker">Pricing</span>
+      <h2>Free is plenty — buy once for more.</h2>
+      <p>Download and use it free, 1,000 characters a day. Need unlimited? Buy once, use forever — not a subscription.</p>
     </div>
     <div class="pricing reveal">
       <div class="pcard">
-        <span class="ptag">免费版</span>
-        <div class="price"><span class="amt">¥0</span><span class="per">免费下载</span></div>
-        <p class="pdesc">适合日常体验和轻量使用。</p>
+        <span class="ptag">Free</span>
+        <div class="price"><span class="amt">¥0</span><span class="per">free download</span></div>
+        <p class="pdesc">Great for everyday and light use.</p>
         <ul>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>每天最多 1000 字输入</li>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>完整识别 + AI 整理 + 术语纠正</li>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>多识别 / 润色服务商自由切换</li>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>历史记录与本地存储</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Up to 1,000 characters of input per day</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Full recognition + AI clean-up + term correction</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Switch recognition / clean-up providers freely</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>History and local storage</li>
         </ul>
-        <a class="btn lg" href="https://github.com/kdsz001/typefree/releases">免费下载 Mac 版</a>
+        <a class="btn lg" href="https://github.com/kdsz001/typefree/releases">Download free for Mac</a>
       </div>
       <div class="pcard feat">
-        <span class="ptag">买断版</span>
-        <div class="price"><span class="amt">$19</span><span class="per">一次性 · 永久</span></div>
-        <p class="pdesc">解锁无限输入，一次付费永久使用，不是订阅。</p>
+        <span class="ptag">Lifetime</span>
+        <div class="price"><span class="amt">$19</span><span class="per">one-time · forever</span></div>
+        <p class="pdesc">Unlock unlimited input. Pay once, use forever — not a subscription.</p>
         <ul>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg><b>无限输入</b>，不再有每日字数限制</li>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>免费版的全部功能</li>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>一个激活码授权 1 台 Mac</li>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>14 天内不满意可全额退款</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg><b>Unlimited input</b>, no daily character cap</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Everything in the free version</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>One license key activates 1 Mac</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Full refund within 14 days if unsatisfied</li>
         </ul>
-        <a class="btn primary lg" href="mailto:ray@typefree.app?subject=%E8%B4%AD%E4%B9%B0%20Typefree%20%E4%B9%B0%E6%96%AD%E7%89%88">购买买断版 · $19</a>
+        <a class="btn primary lg" href="mailto:ray@typefree.app?subject=Buy%20Typefree%20Lifetime">Buy Lifetime · $19</a>
       </div>
     </div>
-    <p class="pnote">结账通道即将上线，将支持 微信 / 支付宝 / 银行卡（由 Paddle 提供）。当前可邮件联系购买。</p>
+    <p class="pnote">Checkout is coming soon (cards, WeChat Pay &amp; Alipay via Paddle). For now, contact us by email to purchase.</p>
   </div>
 </section>
 
@@ -755,35 +755,35 @@
 <section id="start" class="soft">
   <div class="wrap">
     <div class="sec-head center reveal">
-      <span class="kicker">开始使用</span>
-      <h2>三步上手，不把复杂留给第一次打开的人。</h2>
-      <p>新手按步骤装好、授权即可；专业用户再进一步调服务商、热词和术语表。</p>
+      <span class="kicker">Get started</span>
+      <h2>Three steps — no complexity dumped on first-time users.</h2>
+      <p>Beginners just install and grant permissions; power users can go further with providers, hot words and glossary.</p>
     </div>
     <div class="start">
       <div class="scard reveal">
         <div class="sn">STEP 01</div>
-        <h3>下载并安装</h3>
-        <p>下载已签名、已公证的 DMG，拖进"应用程序"即可。免费版每天可输入 1000 字，先试用、满意再买断。</p>
+        <h3>Download &amp; install</h3>
+        <p>Download the signed, notarized DMG and drag it into Applications. The free version gives 1,000 characters a day — try it first, buy the lifetime version once you're happy.</p>
         <div class="links">
-          <a href="https://github.com/kdsz001/typefree/releases"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>下载 Mac 版 DMG</a>
+          <a href="https://github.com/kdsz001/typefree/releases"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>Download the Mac DMG</a>
         </div>
       </div>
       <div class="scard reveal">
         <div class="sn">STEP 02</div>
-        <h3>配置服务商凭证</h3>
-        <p>填入识别和润色的 API Key——你自己在火山引擎和通义申请，Typefree 不中转、不计费。<b>第一次不会弄？跟着图文教程一步步来，5 分钟搞定。</b></p>
+        <h3>Configure provider credentials</h3>
+        <p>Enter your recognition and clean-up API keys — you obtain them yourself from Volcengine and Qwen; Typefree never relays or bills. <b>First time? Follow the step-by-step guide and you're done in 5 minutes.</b></p>
         <div class="links">
-          <a href="setup-guide.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>手把手图文教程 · 5 分钟拿到 API Key</a>
-          <a href="https://console.volcengine.com/speech/new/overview?projectName=default" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7M7 7h10v10"/></svg>火山引擎 · 语音识别</a>
-          <a href="https://bailian.console.aliyun.com" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7M7 7h10v10"/></svg>通义千问 · 大模型</a>
+          <a href="setup-guide.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>Step-by-step guide · Get an API key in 5 min</a>
+          <a href="https://console.volcengine.com/speech/new/overview?projectName=default" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7M7 7h10v10"/></svg>Volcengine · Speech recognition</a>
+          <a href="https://bailian.console.aliyun.com" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7M7 7h10v10"/></svg>Qwen · LLM</a>
         </div>
       </div>
       <div class="scard reveal">
         <div class="sn">STEP 03</div>
-        <h3>授权后开始说话</h3>
-        <p>给麦克风和辅助功能权限，在任意输入框按住快捷键，说完松手——文字就落在光标处了。</p>
+        <h3>Grant access, then speak</h3>
+        <p>Grant microphone and accessibility permissions, hold the shortcut in any field, speak and let go — the text lands at your cursor.</p>
         <div class="links">
-          <a href="#how"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>看它怎么工作</a>
+          <a href="#how"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>See how it works</a>
         </div>
       </div>
     </div>
@@ -794,16 +794,16 @@
 <section>
   <div class="wrap">
     <div class="sec-head center reveal">
-      <span class="kicker">常见问题</span>
-      <h2>提前回答最容易误解的几个问题。</h2>
+      <span class="kicker">FAQ</span>
+      <h2>Answering the things people most often misread.</h2>
     </div>
     <div class="faq">
-      <details open class="reveal"><summary>和系统自带的听写有什么区别？<span class="plus"></span></summary><p>系统听写更像逐字转录，"嗯、那个"也会照打。Typefree 会在识别后整理语言——去口水词、理顺句子、规范数字标点，让输出可以直接发送或当作 Prompt。</p></details>
-      <details class="reveal"><summary>它是完全离线的吗？<span class="plus"></span></summary><p>不是。当前主要路径会调用你配置的云端识别和大模型服务。它强调的是本地优先、不走我们自建的中转——而不是"断网也能用"。</p></details>
-      <details class="reveal"><summary>支持哪些服务商和模型？<span class="plus"></span></summary><p>识别用火山引擎 BigASR；润色支持通义千问、智谱 GLM、豆包，可随时切换，也可以选择"不润色、直接输出原文"。</p></details>
-      <details class="reveal"><summary>怎么收费？可以先免费试用吗？<span class="plus"></span></summary><p>可以。免费版每天能输入 1000 字，足够日常体验；需要无限输入再一次性买断 $19，永久使用、不是订阅。买断后 14 天内不满意可全额退款。</p></details>
-      <details class="reveal"><summary>不太会配 API 的人能用吗？<span class="plus"></span></summary><p>目前更适合愿意配置服务商凭证的用户。引导里有申请入口和填写说明（5 分钟图文教程）；如果你只想先看看效果，可以直接看这页的演示。</p></details>
-      <details class="reveal"><summary>我的录音和数据安全吗？<span class="plus"></span></summary><p>录音、历史和 API 凭证默认存在你自己的设备上（macOS 在 <code>~/.config/voicepolish/</code>）。请求只发往你配置的服务商，不经过我们。历史保留时长也可以自己设。</p></details>
+      <details open class="reveal"><summary>How is this different from the system dictation?<span class="plus"></span></summary><p>System dictation is closer to word-for-word transcription — it types out every &ldquo;um&rdquo; and &ldquo;you know.&rdquo; Typefree cleans the language after recognition — removing fillers, smoothing sentences, normalizing numbers and punctuation — so the output is ready to send or use as a prompt.</p></details>
+      <details class="reveal"><summary>Is it fully offline?<span class="plus"></span></summary><p>No. The main path calls the cloud recognition and LLM services you configured. The emphasis is local-first and never routing through a server of ours — not &ldquo;works without internet.&rdquo;</p></details>
+      <details class="reveal"><summary>Which providers and models are supported?<span class="plus"></span></summary><p>Recognition uses Volcengine BigASR; clean-up supports Qwen, Zhipu GLM and Doubao, switchable anytime — or you can choose &ldquo;no polish, output raw text.&rdquo;</p></details>
+      <details class="reveal"><summary>How does pricing work? Can I try it free first?<span class="plus"></span></summary><p>Yes. The free version gives 1,000 characters a day, plenty to evaluate it; for unlimited input, buy the lifetime version once for $19 — forever, not a subscription. Full refund within 14 days if you're not satisfied.</p></details>
+      <details class="reveal"><summary>Can people who aren't great with APIs use it?<span class="plus"></span></summary><p>Right now it suits users willing to set up provider credentials. The guide has sign-up links and instructions (a 5-minute walkthrough); if you just want to see results, check the demo on this page.</p></details>
+      <details class="reveal"><summary>Are my recordings and data safe?<span class="plus"></span></summary><p>Recordings, history and API credentials are stored on your own device by default (on macOS, <code>~/.config/voicepolish/</code>). Requests only go to the providers you configured, never through us. You set how long history is kept.</p></details>
     </div>
   </div>
 </section>
@@ -812,11 +812,11 @@
 <div class="final">
   <div class="wrap">
     <div class="final-box reveal">
-      <h2>把语音输入，变成你可信赖的日常工具。</h2>
-      <p>适合在意数据边界、又想一次买断、不被订阅绑住的人。免费版先用着，需要更多再升级。</p>
+      <h2>Make voice input a daily tool you can trust.</h2>
+      <p>For people who care about where their data goes, want to buy once, and don't want to be locked into a subscription. Start free, upgrade when you need more.</p>
       <div class="cta">
-        <a class="btn lg" href="https://github.com/kdsz001/typefree/releases"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>免费下载 Mac 版</a>
-        <a class="btn ghost lg" href="#pricing">查看价格 →</a>
+        <a class="btn lg" href="https://github.com/kdsz001/typefree/releases"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>Download free for Mac</a>
+        <a class="btn ghost lg" href="#pricing">See pricing →</a>
       </div>
     </div>
   </div>
@@ -827,12 +827,12 @@
   <div class="wrap">
     <span>© 2026 Typefree · Rui Wang</span>
     <div class="fl">
-      <a href="#pricing">价格</a>
-      <a href="https://github.com/kdsz001/typefree/releases">下载</a>
-      <a href="refund.html">退款政策</a>
-      <a href="privacy.html">隐私政策</a>
-      <a href="terms.html">服务条款</a>
-      <a href="mailto:ray@typefree.app">联系我们</a>
+      <a href="#pricing">Pricing</a>
+      <a href="https://github.com/kdsz001/typefree/releases">Download</a>
+      <a href="refund.html">Refund</a>
+      <a href="privacy.html">Privacy</a>
+      <a href="terms.html">Terms</a>
+      <a href="mailto:ray@typefree.app">Contact</a>
     </div>
   </div>
 </footer>
@@ -853,7 +853,7 @@
   window.addEventListener('load',()=>window.scrollTo(0,0));
 
   // 语言切换器：标记当前 + 记住选择
-  (function(){var P="zh-Hans";var sw=document.getElementById('langsw');if(!sw)return;
+  (function(){var P="en";var sw=document.getElementById('langsw');if(!sw)return;
     sw.querySelectorAll('a').forEach(function(a){
       if(a.dataset.l===P)a.classList.add('on');
       a.addEventListener('click',function(){try{localStorage.setItem('tf_lang',this.dataset.l);}catch(e){}});

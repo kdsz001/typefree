@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Typefree — 开源、安全、稳定的 AI 语音输入</title>
-<meta name="description" content="Typefree 是一个开源的 AI 语音输入工具。按住快捷键说话，自动识别、去掉口水词、理顺句子，把整理好的文字直接落到光标处。代码、数据、API 凭证都在你自己手里。">
+<title>Typefree — 隐私优先、更懂中文的 AI 语音输入</title>
+<meta name="description" content="Typefree 是一个隐私优先的 AI 语音输入工具。按住快捷键说话，自动识别、去掉口水词、理顺句子，把整理好的文字直接落到光标处。录音、数据、API 凭证都在你自己手里。免费版每天 1000 字，买断版无限输入。">
 <script>try{history.scrollRestoration='manual';}catch(e){}</script>
 <style>
   /* ================= 设计令牌：100% 取自 macOS App（SettingsWindowController.swift）================= */
@@ -272,6 +272,23 @@
   .final-box .btn.ghost{background:transparent;color:#fff;border-color:rgba(255,255,255,.28);}
   .final-box .btn.ghost:hover{background:rgba(255,255,255,.08);}
 
+  /* ===== 价格 ===== */
+  .pricing{display:grid;grid-template-columns:repeat(2,1fr);gap:18px;max-width:820px;margin:0 auto;}
+  .pcard{position:relative;padding:32px;border:1px solid var(--line);border-radius:var(--r);background:var(--card);display:flex;flex-direction:column;}
+  .pcard.feat{border-color:var(--ink);box-shadow:var(--shadow-sm);}
+  .pcard .ptag{align-self:flex-start;height:26px;padding:0 13px;border-radius:999px;background:var(--alt);color:var(--ink2);font-size:12.5px;font-weight:650;display:inline-flex;align-items:center;margin-bottom:18px;}
+  .pcard.feat .ptag{background:var(--ink);color:#fff;}
+  .pcard .price{display:flex;align-items:baseline;gap:7px;}
+  .pcard .price .amt{font-size:42px;font-weight:800;letter-spacing:-.03em;}
+  .pcard .price .per{color:var(--ink3);font-size:15px;font-weight:600;}
+  .pcard .pdesc{color:var(--ink2);font-size:15px;margin:10px 0 20px;}
+  .pcard ul{margin:0 0 24px;padding:0;list-style:none;display:flex;flex-direction:column;gap:11px;flex:1;}
+  .pcard li{display:flex;gap:10px;color:var(--ink2);font-size:14.5px;line-height:1.5;}
+  .pcard li b{color:var(--ink);font-weight:650;}
+  .pcard li svg{width:17px;height:17px;color:var(--ok);flex:none;margin-top:2px;}
+  .pcard .btn{width:100%;}
+  .pnote{text-align:center;color:var(--ink3);font-size:13.5px;margin-top:24px;}
+
   /* ===== Footer ===== */
   footer{padding:40px 0;border-top:1px solid var(--line2);color:var(--ink3);font-size:14px;}
   footer .wrap{display:flex;justify-content:space-between;flex-wrap:wrap;gap:14px;align-items:center;}
@@ -303,7 +320,7 @@
   @media(max-width:760px){
     section{padding:72px 0;}
     .nav-links{display:none;}
-    .demo-body,.values,.adv,.faq{grid-template-columns:1fr;}
+    .demo-body,.values,.adv,.faq,.pricing{grid-template-columns:1fr;}
     .cases{column-count:1;}
     .rec{border-bottom:1px solid var(--line2);}
     .convert{transform:translate(-50%,-50%) rotate(90deg);}
@@ -339,12 +356,11 @@
       <a href="#how">原理</a>
       <a href="#platforms">全平台</a>
       <a href="#security">安全</a>
-      <a href="#start">上手</a>
+      <a href="#pricing">价格</a>
       <a href="setup-guide.html">配置教程</a>
     </div>
     <div class="nav-cta">
-      <a class="btn" href="https://github.com/kdsz001/ray-voice">GitHub</a>
-      <a class="btn primary" href="https://github.com/kdsz001/ray-voice/releases">下载 Mac 版</a>
+      <a class="btn primary" href="https://github.com/kdsz001/typefree/releases">下载 Mac 版</a>
     </div>
   </div>
 </nav>
@@ -354,17 +370,17 @@
 <!-- ===================== Hero ===================== -->
 <header class="hero">
   <div class="wrap hero-inner">
-    <div class="eyebrow"><span class="dot"></span><b>开源</b> · 本地优先 · 自带 API Key</div>
-    <h1>开源 AI 语音输入，<br class="hb">把口语变成<span class="grey">能直接用的</span>文字。</h1>
-    <p class="sub">按住快捷键说话，松手即自动识别、去掉口水词、理顺句子，整理好的结果直接落到光标处。代码、数据、API 凭证，全都在你自己手里。</p>
+    <div class="eyebrow"><span class="dot"></span><b>隐私优先</b> · 本地存储 · 自带 API Key</div>
+    <h1>更懂中文的 AI 语音输入，<br class="hb">把口语变成<span class="grey">能直接用的</span>文字。</h1>
+    <p class="sub">按住快捷键说话，松手即自动识别、去掉口水词、理顺句子，整理好的结果直接落到光标处。录音、数据、API 凭证，全都在你自己手里。</p>
     <div class="cta">
-      <a class="btn primary lg" href="https://github.com/kdsz001/ray-voice/releases"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>下载 Mac 版</a>
-      <a class="btn lg" href="https://github.com/kdsz001/ray-voice">GitHub 源码 ↗</a>
+      <a class="btn primary lg" href="https://github.com/kdsz001/typefree/releases"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>免费下载 Mac 版</a>
+      <a class="btn lg" href="#pricing">查看价格 →</a>
     </div>
     <div class="trust">
       <span><i class="g"></i>macOS 12+</span>
       <span><i class="g"></i>已签名 · 已公证</span>
-      <span><i class="g"></i>MIT 开源</span>
+      <span><i class="g"></i>一次买断 · 不订阅</span>
       <span><i class="g"></i>同源支持 iPhone / 输入法键盘</span>
     </div>
 
@@ -407,13 +423,13 @@
   <div class="wrap">
     <div class="sec-head center reveal">
       <span class="kicker">为什么选 Typefree</span>
-      <h2>和订阅制工具一样好用，<br>但代码、数据、凭证都属于你。</h2>
+      <h2>和订阅制工具一样好用，<br>但数据和凭证，都在你自己手里。</h2>
     </div>
     <div class="values">
       <div class="val reveal">
-        <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg></span>
-        <h3>开源透明</h3>
-        <p>录音、识别、整理、回填、凭证读取——每一步都能在源码里查证。信任来自可验证，而不是一句"我们承诺"。</p>
+        <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg></span>
+        <h3>诚实透明</h3>
+        <p>录音、识别、整理、回填——每一步去了哪里都讲清楚。该上云的那一步老实告诉你，绝不把云端调用包装成"全本地"。</p>
       </div>
       <div class="val reveal">
         <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span>
@@ -629,7 +645,7 @@
     </div>
     <div class="boundary">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
-      <p><b>更准确的说法是：</b>你的请求直达你自己配置的云服务商，不走 Typefree 的中转；而代码开源，这一点你可以自己在源码里查证，不必只信我们一句话。</p>
+      <p><b>更准确的说法是：</b>你的请求直达你自己配置的云服务商，不走 Typefree 的中转；该上云的那一步我们也老实告诉你，绝不包装成"全本地"。</p>
     </div>
   </div>
 </section>
@@ -686,6 +702,44 @@
   </div>
 </section>
 
+<!-- ===================== 价格 ===================== -->
+<section id="pricing">
+  <div class="wrap">
+    <div class="sec-head center reveal">
+      <span class="kicker">价格</span>
+      <h2>免费够用，要更多再买断。</h2>
+      <p>下载即用，每天 1000 字免费。需要无限输入，一次买断、永久使用——不是订阅。</p>
+    </div>
+    <div class="pricing reveal">
+      <div class="pcard">
+        <span class="ptag">免费版</span>
+        <div class="price"><span class="amt">¥0</span><span class="per">免费下载</span></div>
+        <p class="pdesc">适合日常体验和轻量使用。</p>
+        <ul>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>每天最多 1000 字输入</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>完整识别 + AI 整理 + 术语纠正</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>多识别 / 润色服务商自由切换</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>历史记录与本地存储</li>
+        </ul>
+        <a class="btn lg" href="https://github.com/kdsz001/typefree/releases">免费下载 Mac 版</a>
+      </div>
+      <div class="pcard feat">
+        <span class="ptag">买断版</span>
+        <div class="price"><span class="amt">$19</span><span class="per">一次性 · 永久</span></div>
+        <p class="pdesc">解锁无限输入，一次付费永久使用，不是订阅。</p>
+        <ul>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg><b>无限输入</b>，不再有每日字数限制</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>免费版的全部功能</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>一个激活码授权 1 台 Mac</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>14 天内不满意可全额退款</li>
+        </ul>
+        <a class="btn primary lg" href="mailto:ray@typefree.app?subject=%E8%B4%AD%E4%B9%B0%20Typefree%20%E4%B9%B0%E6%96%AD%E7%89%88">购买买断版 · $19</a>
+      </div>
+    </div>
+    <p class="pnote">结账通道即将上线，将支持 微信 / 支付宝 / 银行卡（由 Paddle 提供）。当前可邮件联系购买。</p>
+  </div>
+</section>
+
 <!-- ===================== 上手三步 ===================== -->
 <section id="start" class="soft">
   <div class="wrap">
@@ -698,9 +752,9 @@
       <div class="scard reveal">
         <div class="sn">STEP 01</div>
         <h3>下载并安装</h3>
-        <p>从 Releases 下载已签名、已公证的 DMG，拖进"应用程序"即可。也可以克隆源码自己构建。</p>
+        <p>下载已签名、已公证的 DMG，拖进"应用程序"即可。免费版每天可输入 1000 字，先试用、满意再买断。</p>
         <div class="links">
-          <a href="https://github.com/kdsz001/ray-voice/releases"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>下载 Mac 版 DMG</a>
+          <a href="https://github.com/kdsz001/typefree/releases"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>下载 Mac 版 DMG</a>
         </div>
       </div>
       <div class="scard reveal">
@@ -734,10 +788,10 @@
     </div>
     <div class="faq">
       <details open class="reveal"><summary>和系统自带的听写有什么区别？<span class="plus"></span></summary><p>系统听写更像逐字转录，"嗯、那个"也会照打。Typefree 会在识别后整理语言——去口水词、理顺句子、规范数字标点，让输出可以直接发送或当作 Prompt。</p></details>
-      <details class="reveal"><summary>它是完全离线的吗？<span class="plus"></span></summary><p>不是。当前主要路径会调用你配置的云端识别和大模型服务。它强调的是开源透明、本地优先、不走我们自建的中转——而不是"断网也能用"。</p></details>
+      <details class="reveal"><summary>它是完全离线的吗？<span class="plus"></span></summary><p>不是。当前主要路径会调用你配置的云端识别和大模型服务。它强调的是本地优先、不走我们自建的中转——而不是"断网也能用"。</p></details>
       <details class="reveal"><summary>支持哪些服务商和模型？<span class="plus"></span></summary><p>识别用火山引擎 BigASR；润色支持通义千问、智谱 GLM、豆包，可随时切换，也可以选择"不润色、直接输出原文"。</p></details>
-      <details class="reveal"><summary>为什么开源这件事重要？<span class="plus"></span></summary><p>语音输入会接触到很私密的内容。开源让你能亲自检查：录音怎么处理、凭证怎么读取、历史写在哪里——信任建立在可验证之上。</p></details>
-      <details class="reveal"><summary>不太会配 API 的人能用吗？<span class="plus"></span></summary><p>目前更适合愿意配置服务商凭证的用户。引导里有申请入口和填写说明；如果你只想体验，也可以直接看源码和这页的效果演示。</p></details>
+      <details class="reveal"><summary>怎么收费？可以先免费试用吗？<span class="plus"></span></summary><p>可以。免费版每天能输入 1000 字，足够日常体验；需要无限输入再一次性买断 $19，永久使用、不是订阅。买断后 14 天内不满意可全额退款。</p></details>
+      <details class="reveal"><summary>不太会配 API 的人能用吗？<span class="plus"></span></summary><p>目前更适合愿意配置服务商凭证的用户。引导里有申请入口和填写说明（5 分钟图文教程）；如果你只想先看看效果，可以直接看这页的演示。</p></details>
       <details class="reveal"><summary>我的录音和数据安全吗？<span class="plus"></span></summary><p>录音、历史和 API 凭证默认存在你自己的设备上（macOS 在 <code>~/.config/voicepolish/</code>）。请求只发往你配置的服务商，不经过我们。历史保留时长也可以自己设。</p></details>
     </div>
   </div>
@@ -747,11 +801,11 @@
 <div class="final">
   <div class="wrap">
     <div class="final-box reveal">
-      <h2>用开源的方式，把语音输入变成可信赖的日常工具。</h2>
-      <p>适合不想被闭源订阅锁住，又在意数据边界、工程透明和长期稳定的人。</p>
+      <h2>把语音输入，变成你可信赖的日常工具。</h2>
+      <p>适合在意数据边界、又想一次买断、不被订阅绑住的人。免费版先用着，需要更多再升级。</p>
       <div class="cta">
-        <a class="btn lg" href="https://github.com/kdsz001/ray-voice/releases"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>下载 Mac 版</a>
-        <a class="btn ghost lg" href="https://github.com/kdsz001/ray-voice">在 GitHub 上查看源码 ↗</a>
+        <a class="btn lg" href="https://github.com/kdsz001/typefree/releases"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>免费下载 Mac 版</a>
+        <a class="btn ghost lg" href="#pricing">查看价格 →</a>
       </div>
     </div>
   </div>
@@ -760,12 +814,14 @@
 <!-- ===================== Footer ===================== -->
 <footer>
   <div class="wrap">
-    <span>Typefree · 开源 AI 语音输入 · MIT License</span>
+    <span>© 2026 Typefree · Rui Wang</span>
     <div class="fl">
-      <a href="https://github.com/kdsz001/ray-voice">GitHub</a>
-      <a href="https://github.com/kdsz001/ray-voice/releases">下载</a>
-      <a href="#effect">效果</a>
-      <a href="#security">安全</a>
+      <a href="#pricing">价格</a>
+      <a href="https://github.com/kdsz001/typefree/releases">下载</a>
+      <a href="refund.html">退款政策</a>
+      <a href="privacy.html">隐私政策</a>
+      <a href="terms.html">服务条款</a>
+      <a href="mailto:ray@typefree.app">联系我们</a>
     </div>
   </div>
 </footer>

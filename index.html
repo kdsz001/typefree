@@ -51,9 +51,9 @@
   nav.scrolled{border-bottom-color:var(--line2);}
   nav .wrap{display:flex;align-items:center;justify-content:space-between;min-height:60px;gap:20px;}
   .brand{display:inline-flex;align-items:center;gap:10px;font-size:17px;font-weight:700;letter-spacing:-.01em;}
-  .brand .logo{width:28px;height:28px;border-radius:7px;background:var(--ink);
-    display:inline-flex;align-items:center;justify-content:center;color:#fff;}
-  .brand .logo svg{width:16px;height:16px;}
+  .brand .logo{width:28px;height:28px;border-radius:7px;background:#fff;border:1px solid var(--line);
+    display:inline-flex;align-items:center;justify-content:center;color:var(--ink);}
+  .brand .logo svg{width:22px;height:22px;}
   .nav-links{display:flex;align-items:center;gap:28px;color:var(--ink2);font-size:14.5px;font-weight:500;}
   .nav-links a:hover{color:var(--ink);}
   .nav-cta{display:flex;align-items:center;gap:11px;}
@@ -347,6 +347,7 @@
     .cta .btn{width:100%;}
   }
 </style>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='5' fill='%23ffffff'/%3E%3Cg fill='%231D1D1F'%3E%3Crect x='5.25' y='9.77' width='1.73' height='4.43' rx='0.87'/%3E%3Crect x='8.18' y='7.85' width='1.73' height='8.27' rx='0.87'/%3E%3Crect x='11.13' y='6.47' width='1.73' height='11.04' rx='0.87'/%3E%3Crect x='14.06' y='8.39' width='1.73' height='7.2' rx='0.87'/%3E%3Crect x='16.99' y='10.05' width='1.73' height='3.87' rx='0.87'/%3E%3C/g%3E%3C/svg%3E">
 </head>
 <body>
 
@@ -354,7 +355,7 @@
 <nav id="nav">
   <div class="wrap">
     <a class="brand" href="#top">
-      <span class="logo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/></svg></span>
+      <span class="logo"><svg viewBox="0 0 24 24" fill="currentColor"><rect x="5.25" y="9.77" width="1.73" height="4.43" rx="0.87"/><rect x="8.18" y="7.85" width="1.73" height="8.27" rx="0.87"/><rect x="11.13" y="6.47" width="1.73" height="11.04" rx="0.87"/><rect x="14.06" y="8.39" width="1.73" height="7.2" rx="0.87"/><rect x="16.99" y="10.05" width="1.73" height="3.87" rx="0.87"/></svg></span>
       <span>Typefree</span>
     </a>
     <div class="nav-links">

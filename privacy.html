@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>隐私政策 · Privacy Policy · Typefree</title>
-<meta name="description" content="Typefree 隐私政策：本地优先，你的录音、文字、API 凭证都保存在你自己的设备上。Typefree Privacy Policy.">
+<title>隐私政策 · Typefree</title>
+<meta name="description" content="Typefree 隐私政策：本地优先，你的录音、文字、API 凭证都保存在你自己的设备上。">
 <style>
  :root{--bg:#FCFCFD;--alt:#F5F5F7;--ink:#1D1D1F;--ink2:#515154;--ink3:#86868B;--line:rgba(0,0,0,.09);--line2:rgba(0,0,0,.06);--ok:#2E8762;--sans:-apple-system,BlinkMacSystemFont,"PingFang SC","Segoe UI",sans-serif;--maxw:760px;}
  *{box-sizing:border-box;}
@@ -29,25 +29,30 @@
  footer{border-top:1px solid var(--line2);padding:28px 0;color:var(--ink3);font-size:13.5px;}
  footer .wrap{display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px;}
  footer a{color:var(--ink2);}
+
+ .langsw{display:inline-flex;align-items:center;border:1px solid var(--line);border-radius:8px;overflow:hidden;margin-left:4px;}
+ .langsw a{padding:5px 8px;font-size:12px;font-weight:600;color:var(--ink3);border-left:1px solid var(--line2);}
+ .langsw a:first-child{border-left:0;}
+ .langsw a.on{color:var(--ink);background:var(--alt);}
 </style>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='5' fill='%23ffffff'/%3E%3Cg fill='%231D1D1F'%3E%3Crect x='5.25' y='9.77' width='1.73' height='4.43' rx='0.87'/%3E%3Crect x='8.18' y='7.85' width='1.73' height='8.27' rx='0.87'/%3E%3Crect x='11.13' y='6.47' width='1.73' height='11.04' rx='0.87'/%3E%3Crect x='14.06' y='8.39' width='1.73' height='7.2' rx='0.87'/%3E%3Crect x='16.99' y='10.05' width='1.73' height='3.87' rx='0.87'/%3E%3C/g%3E%3C/svg%3E">
+<script>(function(){var P="zh-Hans";try{var s=localStorage.getItem("tf_lang");var w=s;if(!w){var n=(navigator.language||"").toLowerCase();w=n.indexOf("en")===0?"en":/hant|tw|hk|mo/.test(n)?"zh-Hant":"zh-Hans";}if(w!==P){var m={"zh-Hans":"privacy.html","zh-Hant":"privacy.zh-Hant.html","en":"privacy.en.html"};var t=m[w];var cur=location.pathname.split("/").pop();if(t&&t!==cur){location.replace(t);}}}catch(e){}})();</script>
 </head>
 <body>
 <nav><div class="wrap">
   <a class="brand" href="index.html">Typefree</a>
   <div class="nav-links">
-    <a href="index.html#pricing">价格 Pricing</a>
-    <a href="refund.html">退款 Refund</a>
-    <a href="privacy.html">隐私 Privacy</a>
-    <a href="terms.html">条款 Terms</a>
+    <a href="index.html#pricing">价格</a>
+    <a href="refund.html">退款</a>
+    <a href="privacy.html">隐私</a>
+    <a href="terms.html">条款</a>
+    <span class="langsw"><a href="privacy.html" data-l="zh-Hans">简</a><a href="privacy.zh-Hant.html" data-l="zh-Hant">繁</a><a href="privacy.en.html" data-l="en">EN</a></span>
   </div>
 </div></nav>
 
 <main><div class="wrap">
-  <h1>隐私政策 · Privacy Policy</h1>
-  <p class="updated">最后更新：2026 年 6 月 9 日 · Last updated: June 9, 2026</p>
-
-  <div class="doclang">中文</div>
+  <h1>隐私政策</h1>
+  <p class="updated">最后更新：2026 年 6 月 9 日</p>
 
   <h2>一句话总结</h2>
   <p>Typefree <strong>在你自己的设备上本地运行</strong>。你的录音、转写文字、历史记录和 API 凭证，<strong>默认都保存在你的设备上</strong>——我们没有用于存储你这些内容的服务器，也不会收集它们。</p>
@@ -73,38 +78,12 @@
 
   <h2>政策变更</h2>
   <p>本政策如有更新，会在本页发布并更新顶部日期。</p>
-
-  <div class="doclang">English</div>
-
-  <h2>In one sentence</h2>
-  <p>Typefree <strong>runs locally on your own device</strong>. Your recordings, transcribed text, history and API credentials are <strong>stored on your device by default</strong> — we operate no servers that store this content, and we do not collect it.</p>
-
-  <h2>Who we are</h2>
-  <p>Typefree is a voice-input tool built by the Typefree team. For privacy questions, contact <a href="mailto:ray@typefree.app">ray@typefree.app</a>.</p>
-
-  <h2>How your voice and text are handled</h2>
-  <ul>
-    <li><strong>Recording is local</strong>: audio is captured on your device while you hold the shortcut, and only enters processing after you release it.</li>
-    <li><strong>Recognition and clean-up run through third-party providers you configure yourself</strong>: speech recognition and AI clean-up use <strong>your own</strong> third-party services (e.g. Volcengine, Alibaba Cloud Bailian) with <strong>your own API key</strong>. Requests are sent <strong>directly from your device to those providers — they do not pass through Typefree's servers</strong>. That content is governed by each provider's own privacy policy, which we recommend you review.</li>
-    <li><strong>History and credentials stay local</strong>: recognition history, optional original audio, and API credentials are stored in a local folder on your device (on macOS, <code>~/.config/voicepolish/</code>). Whether and how long to keep them is up to you.</li>
-  </ul>
-
-  <h2>Purchase and activation</h2>
-  <p>Purchases are handled by our payment provider <strong>Paddle</strong> (Paddle.com Market Ltd, acting as Merchant of Record / reseller). Your payment information is collected and processed by Paddle under its own privacy policy; we never receive your full card details. When activating the paid version, the app transmits only your <strong>license key</strong> for validation — never your voice or text.</p>
-
-  <h2>This website</h2>
-  <p>typefree.app is a static site hosted on GitHub Pages / Cloudflare. It sets <strong>no tracking cookies and includes no third-party advertising or behavioral analytics</strong>. Hosting providers may retain standard server access logs (such as IP address and timestamp) under their own policies for security and operations.</p>
-
-  <h2>Your rights</h2>
-  <p>Because we hold almost none of your personal data, you have full control over the data on your device and can delete it at any time. For purchase-related data, contact us or Paddle. Send any privacy request to <a href="mailto:ray@typefree.app">ray@typefree.app</a>.</p>
-
-  <h2>Changes</h2>
-  <p>If this policy changes, we will post the update on this page and revise the date at the top.</p>
 </div></main>
 
 <footer><div class="wrap">
   <span>© 2026 Typefree</span>
   <a href="mailto:ray@typefree.app">ray@typefree.app</a>
 </div></footer>
+<script>(function(){var P="zh-Hans";var sw=document.querySelector(".langsw");if(!sw)return;sw.querySelectorAll("a").forEach(function(a){if(a.dataset.l===P)a.classList.add("on");a.addEventListener("click",function(){try{localStorage.setItem("tf_lang",this.dataset.l);}catch(e){}});});})();</script>
 </body>
 </html>

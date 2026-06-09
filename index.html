@@ -252,7 +252,7 @@
   .scard .links a:hover{color:var(--ok);}
 
   /* ===== FAQ ===== */
-  .faq{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;align-items:start;}
+  .faq{display:flex;flex-direction:column;gap:14px;max-width:760px;margin:0 auto;}
   details{border:1px solid var(--line);border-radius:var(--r-sm);background:var(--card);overflow:hidden;}
   summary{cursor:pointer;padding:20px 22px;list-style:none;font-weight:650;font-size:16px;
     display:flex;justify-content:space-between;align-items:center;gap:14px;}
@@ -326,7 +326,7 @@
   @media(max-width:760px){
     section{padding:72px 0;}
     .nav-links{display:none;}
-    .demo-body,.values,.adv,.faq,.pricing{grid-template-columns:1fr;}
+    .demo-body,.values,.adv,.pricing{grid-template-columns:1fr;}
     .cases{column-count:1;}
     .rec{border-bottom:1px solid var(--line2);}
     .convert{transform:translate(-50%,-50%) rotate(90deg);}

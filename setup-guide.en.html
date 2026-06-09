@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Setting up your API key · Typefree</title>
+<meta name="description" content="How to set up your API key for Typefree.">
+<style>
+  /* ===== 设计令牌：与官网 index-new / macOS App 一套（系统原生灰）===== */
+  :root{
+    --bg:#FCFCFD; --card:#FFFFFF; --alt:#F5F5F7; --alt2:#ECECEE;
+    --ink:#1D1D1F; --ink2:#515154; --ink3:#86868B;
+    --line:rgba(0,0,0,.09); --line2:rgba(0,0,0,.06);
+    --ok:#2E8762; --ok-soft:#E8F2EC; --dark:#1C1C1E;
+    --warn:#9A5A16; --warn-soft:#FBF3E6; --pin:#E0483B;
+    --sans:-apple-system,BlinkMacSystemFont,"PingFang SC","Segoe UI",sans-serif;
+    --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+    --shadow:0 24px 70px rgba(20,20,22,.10), 0 4px 14px rgba(20,20,22,.05);
+    --shadow-sm:0 1px 2px rgba(20,20,22,.05), 0 10px 28px rgba(20,20,22,.06);
+    --r:16px; --r-sm:12px;
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;-webkit-text-size-adjust:100%;}
+  body{margin:0;color:var(--ink);background:var(--bg);font-family:var(--sans);
+    line-height:1.66;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;}
+  a{color:inherit;text-decoration:none;}
+  p{margin:0;}
+  h1,h2,h3{margin:0;letter-spacing:-.022em;}
+  code{font-family:var(--mono);font-size:.92em;background:var(--alt);padding:1px 5px;border-radius:5px;}
+  .wrap{width:min(860px,calc(100% - 44px));margin:0 auto;}
+
+  /* nav */
+  nav{position:sticky;top:0;z-index:50;border-bottom:1px solid var(--line2);
+    background:rgba(252,252,253,.72);backdrop-filter:saturate(180%) blur(20px);}
+  nav .wrap{display:flex;align-items:center;justify-content:space-between;min-height:58px;}
+  .brand{display:inline-flex;align-items:center;gap:10px;font-size:16px;font-weight:700;letter-spacing:-.01em;}
+  .brand .logo{width:26px;height:26px;border-radius:7px;background:#fff;border:1px solid var(--line);display:inline-flex;
+    align-items:center;justify-content:center;color:var(--ink);}
+  .brand .logo svg{width:20px;height:20px;}
+  .nav-links a{font-size:14px;font-weight:550;color:var(--ink2);}
+  .nav-links a:hover{color:var(--ink);}
+
+  /* hero */
+  header.hero{position:relative;padding:62px 0 26px;overflow:hidden;}
+  header.hero::before{content:"";position:absolute;inset:0;z-index:0;
+    background:radial-gradient(46% 38% at 30% 0%,rgba(46,135,98,.06),rgba(46,135,98,0) 70%);}
+  .hero-inner{position:relative;z-index:1;}
+  .eyebrow{display:inline-flex;align-items:center;gap:9px;height:31px;padding:0 14px;border-radius:999px;
+    background:var(--alt);border:1px solid var(--line2);color:var(--ink2);font-size:13px;font-weight:600;}
+  .eyebrow .dot{width:7px;height:7px;border-radius:50%;background:var(--ok);box-shadow:0 0 0 3px rgba(46,135,98,.16);}
+  h1{font-size:clamp(28px,5vw,42px);line-height:1.12;font-weight:800;margin:18px 0 14px;}
+  .lead{font-size:17.5px;color:var(--ink2);max-width:680px;line-height:1.55;}
+
+  /* note */
+  .note{margin:22px 0;padding:17px 19px;border:1px solid var(--line);border-left:3px solid var(--ok);
+    border-radius:var(--r-sm);background:var(--card);box-shadow:var(--shadow-sm);font-size:15px;}
+  .note b{color:var(--ink);}
+  .note.warn{border-left-color:var(--warn);background:var(--warn-soft);}
+  .note.warn b{color:var(--warn);}
+
+  /* step header */
+  .step-h{display:flex;align-items:center;gap:13px;margin:46px 0 6px;}
+  .step-n{flex:none;width:32px;height:32px;border-radius:9px;background:var(--ink);color:#fff;
+    font-weight:700;font-size:15px;display:flex;align-items:center;justify-content:center;}
+  .step-h h2{font-size:23px;font-weight:760;letter-spacing:-.01em;}
+  .sub{color:var(--ink2);font-size:15px;margin:3px 0 0;line-height:1.55;}
+
+  /* plans */
+  .plans{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:20px;}
+  @media(max-width:680px){.plans{grid-template-columns:1fr;}}
+  .plan{border:1px solid var(--line);border-radius:var(--r);background:var(--card);padding:22px;position:relative;
+    box-shadow:var(--shadow-sm);transition:transform .18s ease,box-shadow .18s ease;}
+  .plan:hover{transform:translateY(-2px);}
+  .plan.reco{border-color:var(--ok);box-shadow:0 0 0 3px var(--ok-soft),var(--shadow-sm);}
+  .plan .tag{position:absolute;top:-11px;left:18px;background:var(--ok);color:#fff;
+    font-size:12px;font-weight:700;padding:3px 11px;border-radius:999px;}
+  .plan h3{margin:4px 0 6px;font-size:18px;font-weight:740;}
+  .plan .keys{font-size:13.5px;font-weight:700;color:var(--ok);background:var(--ok-soft);
+    display:inline-block;padding:3px 11px;border-radius:8px;margin:6px 0 11px;}
+  .plan p{font-size:14.5px;color:var(--ink2);line-height:1.6;}
+  .plan .who{margin-top:11px;font-size:14px;color:var(--ink);font-weight:650;}
+
+  /* steps list */
+  ol.steps{margin:16px 0 0;padding-left:0;list-style:none;counter-reset:s;}
+  ol.steps>li{position:relative;padding:0 0 20px 40px;counter-increment:s;}
+  ol.steps>li::before{content:counter(s);position:absolute;left:0;top:-1px;width:27px;height:27px;
+    border-radius:50%;background:var(--ok-soft);color:var(--ok);font-weight:700;font-size:14px;
+    display:flex;align-items:center;justify-content:center;}
+  ol.steps>li::after{content:"";position:absolute;left:13px;top:29px;bottom:0;width:1.5px;background:var(--line);}
+  ol.steps>li:last-child::after{display:none;}
+  ol.steps b{font-weight:700;}
+
+  /* 截图框 + 红框 + 隐私遮罩 */
+  figure{margin:15px 0 2px;}
+  .shot{position:relative;border:1px solid var(--line);border-radius:var(--r);overflow:hidden;
+    box-shadow:var(--shadow);background:#fff;line-height:0;}
+  .shot img{width:100%;display:block;}
+  .pin{position:absolute;border:3px solid var(--pin);border-radius:8px;
+    box-shadow:0 0 0 4px rgba(224,72,59,.16);pointer-events:none;}
+  .pin .lbl{position:absolute;top:-13px;left:-3px;transform:translateY(-100%);
+    background:var(--pin);color:#fff;font-size:12px;font-weight:700;white-space:nowrap;
+    padding:3px 8px;border-radius:6px;line-height:1.3;}
+  .mask{position:absolute;background:var(--alt2);border-radius:3px;}
+  figcaption{font-size:13px;color:var(--ink3);margin-top:9px;text-align:center;}
+
+  .key-link{display:inline-flex;align-items:center;gap:7px;margin:5px 0;min-height:42px;padding:0 16px;
+    border-radius:11px;border:1px solid var(--ink);background:var(--ink);color:#fff;
+    font-size:14.5px;font-weight:650;transition:transform .16s ease;}
+  .key-link:hover{transform:translateY(-1px);}
+  .key-link.ghost{background:var(--card);color:var(--ink);border-color:var(--line);}
+
+  /* dict & faq */
+  .dict{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px;}
+  @media(max-width:680px){.dict{grid-template-columns:1fr;}}
+  .dict div{border:1px solid var(--line);border-radius:var(--r-sm);background:var(--card);
+    padding:14px 16px;font-size:14px;box-shadow:var(--shadow-sm);}
+  .dict b{color:var(--ink);}
+  details{border:1px solid var(--line);border-radius:var(--r-sm);background:var(--card);
+    padding:2px 17px;margin:10px 0;box-shadow:var(--shadow-sm);}
+  details summary{cursor:pointer;font-weight:700;padding:13px 0;font-size:15px;list-style:none;}
+  details summary::-webkit-details-marker{display:none;}
+  details summary::before{content:"＋ ";color:var(--ok);font-weight:700;}
+  details[open] summary::before{content:"－ ";}
+  details p{color:var(--ink2);font-size:14.5px;line-height:1.6;padding:0 0 15px;}
+
+  footer{padding:46px 0 64px;color:var(--ink3);font-size:13px;text-align:center;border-top:1px solid var(--line2);margin-top:48px;}
+  /* —— 左侧目录导航 —— */
+  .doc-wrap{width:min(1160px,calc(100% - 44px));margin:0 auto;display:flex;gap:46px;align-items:flex-start;}
+  .toc{position:sticky;top:74px;width:226px;flex-shrink:0;max-height:calc(100vh - 96px);overflow-y:auto;padding:2px 0 8px;}
+  .toc-title{font-size:11.5px;font-weight:700;letter-spacing:.09em;color:var(--ink3);margin:0 0 9px 13px;}
+  .toc a{display:block;padding:7px 13px;color:var(--ink2);text-decoration:none;border-left:2px solid var(--line);line-height:1.4;font-size:14px;border-radius:0 7px 7px 0;transition:background .15s,color .15s,border-color .15s;}
+  .toc a:hover{color:var(--ink);background:var(--alt);}
+  .toc a.active{color:var(--ok);border-left-color:var(--ok);background:var(--ok-soft);font-weight:600;}
+  .doc-main{flex:1;min-width:0;max-width:840px;}
+  .step-h[id]{scroll-margin-top:74px;}
+  @media(max-width:920px){.doc-wrap{display:block;}.toc{display:none;}.doc-main{max-width:none;}}
+
+  .langsw{display:inline-flex;align-items:center;border:1px solid var(--line);border-radius:8px;overflow:hidden;margin-left:14px;vertical-align:middle;}
+  .langsw a{padding:5px 8px;font-size:12px;font-weight:600;color:var(--ink3);border-left:1px solid var(--line2);}
+  .langsw a:first-child{border-left:0;}
+  .langsw a.on{color:var(--ink);background:var(--alt2);}
+</style>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='5' fill='%23ffffff'/%3E%3Cg fill='%231D1D1F'%3E%3Crect x='5.25' y='9.77' width='1.73' height='4.43' rx='0.87'/%3E%3Crect x='8.18' y='7.85' width='1.73' height='8.27' rx='0.87'/%3E%3Crect x='11.13' y='6.47' width='1.73' height='11.04' rx='0.87'/%3E%3Crect x='14.06' y='8.39' width='1.73' height='7.2' rx='0.87'/%3E%3Crect x='16.99' y='10.05' width='1.73' height='3.87' rx='0.87'/%3E%3C/g%3E%3C/svg%3E">
+<script>(function(){var P="en";try{var s=localStorage.getItem("tf_lang");var w=s;if(!w){var n=(navigator.language||"").toLowerCase();w=n.indexOf("en")===0?"en":/hant|tw|hk|mo/.test(n)?"zh-Hant":"zh-Hans";}if(w!==P){var m={"zh-Hans":"setup-guide.html","zh-Hant":"setup-guide.zh-Hant.html","en":"setup-guide.en.html"};var t=m[w];var cur=location.pathname.split("/").pop();if(t&&t!==cur){location.replace(t);}}}catch(e){}})();</script>
+</head>
+<body>
+<nav><div class="wrap">
+  <a class="brand" href="index.en.html"><span class="logo"><svg viewBox="0 0 24 24" fill="currentColor"><rect x="5.25" y="9.77" width="1.73" height="4.43" rx="0.87"/><rect x="8.18" y="7.85" width="1.73" height="8.27" rx="0.87"/><rect x="11.13" y="6.47" width="1.73" height="11.04" rx="0.87"/><rect x="14.06" y="8.39" width="1.73" height="7.2" rx="0.87"/><rect x="16.99" y="10.05" width="1.73" height="3.87" rx="0.87"/></svg></span>Typefree</a>
+  <div class="nav-links"><a href="index.en.html">← Back to home</a><span class="langsw"><a href="setup-guide.html" data-l="zh-Hans">简</a><a href="setup-guide.zh-Hant.html" data-l="zh-Hant">繁</a><a href="setup-guide.en.html" data-l="en">EN</a></span></div>
+</div></nav>
+
+<header class="hero"><div class="wrap hero-inner">
+  <span class="eyebrow"><span class="dot"></span>Setup guide</span>
+  <h1>Setting up your API&nbsp;key</h1>
+  <p class="lead">Typefree connects to AI services using your own API key. Here's the honest state of things for international users.</p>
+</div></header>
+
+<div class="wrap" style="max-width:760px;padding-bottom:64px;">
+
+  <div class="note warn">
+    <b>Heads-up for users outside mainland China.</b><br>
+    Typefree's speech recognition currently relies on <b>mainland-China providers</b> (Volcengine / Doubao and Alibaba Cloud Bailian). Their consoles are in Chinese and require <b>mainland-China real-name verification</b> (a Chinese national ID), so these services aren't practically usable without a mainland China account. For that reason, a full English step-by-step guide isn't available yet.
+  </div>
+
+  <div class="note">
+    <b>If you can read Chinese</b>, the complete step-by-step guide (with screenshots) is here:<br>
+    <a class="key-link" href="setup-guide.html" style="margin-top:10px;">简体中文教程 ↗</a>
+    <a class="key-link ghost" href="setup-guide.zh-Hant.html">繁體中文教程 ↗</a>
+  </div>
+
+  <div class="note">
+    <b>What's next.</b> We plan to support recognition providers that work worldwide (such as OpenAI or Deepgram) so Typefree becomes fully usable internationally. If that's important to you, let us know — it helps us prioritize.
+  </div>
+
+  <div class="note">
+    <b>Questions?</b> Email <a href="mailto:ray@typefree.app" style="color:var(--ok);font-weight:650;">ray@typefree.app</a> and we're happy to help.
+  </div>
+
+</div>
+
+<footer><div class="wrap">Typefree · Your voice, your API, your data — all in your own hands.</div></footer>
+<script>(function(){var P="en";var sw=document.querySelector(".langsw");if(!sw)return;sw.querySelectorAll("a").forEach(function(a){if(a.dataset.l===P)a.classList.add("on");a.addEventListener("click",function(){try{localStorage.setItem("tf_lang",this.dataset.l);}catch(e){}});});})();</script>
+</body>
+</html>

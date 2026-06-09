@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="zh-TW" data-tflang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Typefree · 5 分鐘拿到 API Key（手把手圖文教程）</title>
+<meta name="description" content="完全沒接觸過也不怕。跟著圖一步步點，幾分鐘拿到 API Key，讓 Typefree 跑起來。">
+<style>
+  /* ===== 設計令牌：與官網 index-new / macOS App 一套（系統原生灰）===== */
+  :root{
+    --bg:#FCFCFD; --card:#FFFFFF; --alt:#F5F5F7; --alt2:#ECECEE;
+    --ink:#1D1D1F; --ink2:#515154; --ink3:#86868B;
+    --line:rgba(0,0,0,.09); --line2:rgba(0,0,0,.06);
+    --ok:#2E8762; --ok-soft:#E8F2EC; --dark:#1C1C1E;
+    --warn:#9A5A16; --warn-soft:#FBF3E6; --pin:#E0483B;
+    --sans:-apple-system,BlinkMacSystemFont,"PingFang SC","Segoe UI",sans-serif;
+    --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+    --shadow:0 24px 70px rgba(20,20,22,.10), 0 4px 14px rgba(20,20,22,.05);
+    --shadow-sm:0 1px 2px rgba(20,20,22,.05), 0 10px 28px rgba(20,20,22,.06);
+    --r:16px; --r-sm:12px;
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;-webkit-text-size-adjust:100%;}
+  body{margin:0;color:var(--ink);background:var(--bg);font-family:var(--sans);
+    line-height:1.66;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;}
+  a{color:inherit;text-decoration:none;}
+  p{margin:0;}
+  h1,h2,h3{margin:0;letter-spacing:-.022em;}
+  code{font-family:var(--mono);font-size:.92em;background:var(--alt);padding:1px 5px;border-radius:5px;}
+  .wrap{width:min(860px,calc(100% - 44px));margin:0 auto;}
+
+  /* nav */
+  nav{position:sticky;top:0;z-index:50;border-bottom:1px solid var(--line2);
+    background:rgba(252,252,253,.72);backdrop-filter:saturate(180%) blur(20px);}
+  nav .wrap{display:flex;align-items:center;justify-content:space-between;min-height:58px;}
+  .brand{display:inline-flex;align-items:center;gap:10px;font-size:16px;font-weight:700;letter-spacing:-.01em;}
+  .brand .logo{width:26px;height:26px;border-radius:7px;background:#fff;border:1px solid var(--line);display:inline-flex;
+    align-items:center;justify-content:center;color:var(--ink);}
+  .brand .logo svg{width:20px;height:20px;}
+  .nav-links a{font-size:14px;font-weight:550;color:var(--ink2);}
+  .nav-links a:hover{color:var(--ink);}
+
+  /* hero */
+  header.hero{position:relative;padding:62px 0 26px;overflow:hidden;}
+  header.hero::before{content:"";position:absolute;inset:0;z-index:0;
+    background:radial-gradient(46% 38% at 30% 0%,rgba(46,135,98,.06),rgba(46,135,98,0) 70%);}
+  .hero-inner{position:relative;z-index:1;}
+  .eyebrow{display:inline-flex;align-items:center;gap:9px;height:31px;padding:0 14px;border-radius:999px;
+    background:var(--alt);border:1px solid var(--line2);color:var(--ink2);font-size:13px;font-weight:600;}
+  .eyebrow .dot{width:7px;height:7px;border-radius:50%;background:var(--ok);box-shadow:0 0 0 3px rgba(46,135,98,.16);}
+  h1{font-size:clamp(28px,5vw,42px);line-height:1.12;font-weight:800;margin:18px 0 14px;}
+  .lead{font-size:17.5px;color:var(--ink2);max-width:680px;line-height:1.55;}
+
+  /* note */
+  .note{margin:22px 0;padding:17px 19px;border:1px solid var(--line);border-left:3px solid var(--ok);
+    border-radius:var(--r-sm);background:var(--card);box-shadow:var(--shadow-sm);font-size:15px;}
+  .note b{color:var(--ink);}
+  .note.warn{border-left-color:var(--warn);background:var(--warn-soft);}
+  .note.warn b{color:var(--warn);}
+
+  /* step header */
+  .step-h{display:flex;align-items:center;gap:13px;margin:46px 0 6px;}
+  .step-n{flex:none;width:32px;height:32px;border-radius:9px;background:var(--ink);color:#fff;
+    font-weight:700;font-size:15px;display:flex;align-items:center;justify-content:center;}
+  .step-h h2{font-size:23px;font-weight:760;letter-spacing:-.01em;}
+  .sub{color:var(--ink2);font-size:15px;margin:3px 0 0;line-height:1.55;}
+
+  /* plans */
+  .plans{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:20px;}
+  @media(max-width:680px){.plans{grid-template-columns:1fr;}}
+  .plan{border:1px solid var(--line);border-radius:var(--r);background:var(--card);padding:22px;position:relative;
+    box-shadow:var(--shadow-sm);transition:transform .18s ease,box-shadow .18s ease;}
+  .plan:hover{transform:translateY(-2px);}
+  .plan.reco{border-color:var(--ok);box-shadow:0 0 0 3px var(--ok-soft),var(--shadow-sm);}
+  .plan .tag{position:absolute;top:-11px;left:18px;background:var(--ok);color:#fff;
+    font-size:12px;font-weight:700;padding:3px 11px;border-radius:999px;}
+  .plan h3{margin:4px 0 6px;font-size:18px;font-weight:740;}
+  .plan .keys{font-size:13.5px;font-weight:700;color:var(--ok);background:var(--ok-soft);
+    display:inline-block;padding:3px 11px;border-radius:8px;margin:6px 0 11px;}
+  .plan p{font-size:14.5px;color:var(--ink2);line-height:1.6;}
+  .plan .who{margin-top:11px;font-size:14px;color:var(--ink);font-weight:650;}
+
+  /* steps list */
+  ol.steps{margin:16px 0 0;padding-left:0;list-style:none;counter-reset:s;}
+  ol.steps>li{position:relative;padding:0 0 20px 40px;counter-increment:s;}
+  ol.steps>li::before{content:counter(s);position:absolute;left:0;top:-1px;width:27px;height:27px;
+    border-radius:50%;background:var(--ok-soft);color:var(--ok);font-weight:700;font-size:14px;
+    display:flex;align-items:center;justify-content:center;}
+  ol.steps>li::after{content:"";position:absolute;left:13px;top:29px;bottom:0;width:1.5px;background:var(--line);}
+  ol.steps>li:last-child::after{display:none;}
+  ol.steps b{font-weight:700;}
+
+  /* 截圖框 + 紅框 + 隱私遮罩 */
+  figure{margin:15px 0 2px;}
+  .shot{position:relative;border:1px solid var(--line);border-radius:var(--r);overflow:hidden;
+    box-shadow:var(--shadow);background:#fff;line-height:0;}
+  .shot img{width:100%;display:block;}
+  .pin{position:absolute;border:3px solid var(--pin);border-radius:8px;
+    box-shadow:0 0 0 4px rgba(224,72,59,.16);pointer-events:none;}
+  .pin .lbl{position:absolute;top:-13px;left:-3px;transform:translateY(-100%);
+    background:var(--pin);color:#fff;font-size:12px;font-weight:700;white-space:nowrap;
+    padding:3px 8px;border-radius:6px;line-height:1.3;}
+  .mask{position:absolute;background:var(--alt2);border-radius:3px;}
+  figcaption{font-size:13px;color:var(--ink3);margin-top:9px;text-align:center;}
+
+  .key-link{display:inline-flex;align-items:center;gap:7px;margin:5px 0;min-height:42px;padding:0 16px;
+    border-radius:11px;border:1px solid var(--ink);background:var(--ink);color:#fff;
+    font-size:14.5px;font-weight:650;transition:transform .16s ease;}
+  .key-link:hover{transform:translateY(-1px);}
+  .key-link.ghost{background:var(--card);color:var(--ink);border-color:var(--line);}
+
+  /* dict & faq */
+  .dict{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px;}
+  @media(max-width:680px){.dict{grid-template-columns:1fr;}}
+  .dict div{border:1px solid var(--line);border-radius:var(--r-sm);background:var(--card);
+    padding:14px 16px;font-size:14px;box-shadow:var(--shadow-sm);}
+  .dict b{color:var(--ink);}
+  details{border:1px solid var(--line);border-radius:var(--r-sm);background:var(--card);
+    padding:2px 17px;margin:10px 0;box-shadow:var(--shadow-sm);}
+  details summary{cursor:pointer;font-weight:700;padding:13px 0;font-size:15px;list-style:none;}
+  details summary::-webkit-details-marker{display:none;}
+  details summary::before{content:"＋ ";color:var(--ok);font-weight:700;}
+  details[open] summary::before{content:"－ ";}
+  details p{color:var(--ink2);font-size:14.5px;line-height:1.6;padding:0 0 15px;}
+
+  footer{padding:46px 0 64px;color:var(--ink3);font-size:13px;text-align:center;border-top:1px solid var(--line2);margin-top:48px;}
+  /* —— 左側目錄導航 —— */
+  .doc-wrap{width:min(1160px,calc(100% - 44px));margin:0 auto;display:flex;gap:46px;align-items:flex-start;}
+  .toc{position:sticky;top:74px;width:226px;flex-shrink:0;max-height:calc(100vh - 96px);overflow-y:auto;padding:2px 0 8px;}
+  .toc-title{font-size:11.5px;font-weight:700;letter-spacing:.09em;color:var(--ink3);margin:0 0 9px 13px;}
+  .toc a{display:block;padding:7px 13px;color:var(--ink2);text-decoration:none;border-left:2px solid var(--line);line-height:1.4;font-size:14px;border-radius:0 7px 7px 0;transition:background .15s,color .15s,border-color .15s;}
+  .toc a:hover{color:var(--ink);background:var(--alt);}
+  .toc a.active{color:var(--ok);border-left-color:var(--ok);background:var(--ok-soft);font-weight:600;}
+  .doc-main{flex:1;min-width:0;max-width:840px;}
+  .step-h[id]{scroll-margin-top:74px;}
+  @media(max-width:920px){.doc-wrap{display:block;}.toc{display:none;}.doc-main{max-width:none;}}
+
+  .langsw{display:inline-flex;align-items:center;border:1px solid var(--line);border-radius:8px;overflow:hidden;margin-left:14px;vertical-align:middle;}
+  .langsw a{padding:5px 8px;font-size:12px;font-weight:600;color:var(--ink3);border-left:1px solid var(--line2);}
+  .langsw a:first-child{border-left:0;}
+  .langsw a.on{color:var(--ink);background:var(--alt2);}
+</style>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='5' fill='%23ffffff'/%3E%3Cg fill='%231D1D1F'%3E%3Crect x='5.25' y='9.77' width='1.73' height='4.43' rx='0.87'/%3E%3Crect x='8.18' y='7.85' width='1.73' height='8.27' rx='0.87'/%3E%3Crect x='11.13' y='6.47' width='1.73' height='11.04' rx='0.87'/%3E%3Crect x='14.06' y='8.39' width='1.73' height='7.2' rx='0.87'/%3E%3Crect x='16.99' y='10.05' width='1.73' height='3.87' rx='0.87'/%3E%3C/g%3E%3C/svg%3E">
+<script>(function(){var P="zh-Hant";try{var s=localStorage.getItem("tf_lang");var w=s;if(!w){var n=(navigator.language||"").toLowerCase();w=n.indexOf("en")===0?"en":/hant|tw|hk|mo/.test(n)?"zh-Hant":"zh-Hans";}if(w!==P){var m={"zh-Hans":"setup-guide.html","zh-Hant":"setup-guide.zh-Hant.html","en":"setup-guide.en.html"};var t=m[w];var cur=location.pathname.split("/").pop();if(t&&t!==cur){location.replace(t);}}}catch(e){}})();</script>
+</head>
+<body>
+<nav><div class="wrap">
+  <a class="brand" href="index.zh-Hant.html"><span class="logo"><svg viewBox="0 0 24 24" fill="currentColor"><rect x="5.25" y="9.77" width="1.73" height="4.43" rx="0.87"/><rect x="8.18" y="7.85" width="1.73" height="8.27" rx="0.87"/><rect x="11.13" y="6.47" width="1.73" height="11.04" rx="0.87"/><rect x="14.06" y="8.39" width="1.73" height="7.2" rx="0.87"/><rect x="16.99" y="10.05" width="1.73" height="3.87" rx="0.87"/></svg></span>Typefree</a>
+  <div class="nav-links"><a href="index.zh-Hant.html">← 返回首頁</a><span class="langsw"><a href="setup-guide.html" data-l="zh-Hans">簡</a><a href="setup-guide.zh-Hant.html" data-l="zh-Hant">繁</a><a href="setup-guide.en.html" data-l="en">EN</a></span></div>
+</div></nav>
+
+<header class="hero"><div class="wrap hero-inner">
+  <span class="eyebrow"><span class="dot"></span>配置指南 · 5 分鐘搞定</span>
+  <h1>手把手拿到 API Key，<br>讓 Typefree 跑起來</h1>
+  <p class="lead">完全沒接觸過也別怕。跟著下面的圖一步步點，幾分鐘就行。每個看不懂的詞，我都給你翻譯成人話。</p>
+</div></header>
+
+<div class="doc-wrap">
+
+<aside class="toc">
+  <div class="toc-title">目錄</div>
+  <a href="#s-plan">先選一個方案</a>
+  <a href="#s-ali">拿阿里的鑰匙</a>
+  <a href="#s-volc">拿火山的鑰匙</a>
+  <a href="#s-fill">填進 Typefree</a>
+  <a href="#s-faq">常見問題</a>
+  <a href="#s-dict">術語詞典</a>
+</aside>
+
+<div class="doc-main">
+
+  <div class="note">
+    <b>先說清楚：API Key 是啥？</b><br>
+    你可以把它理解成一把<b>「鑰匙」</b>——它讓 Typefree 能用<b>你自己賬號</b>下的 AI 服務（把話變成字、把字理順）。
+    所以你要做的就三件事：<b>① 去拿這把鑰匙　② 複製它　③ 粘進 Typefree</b>。拿鑰匙不花錢，註冊個賬號、點幾下就有了。
+  </div>
+
+  <!-- STEP 1 -->
+  <div class="step-h" id="s-plan"><span class="step-n">1</span><div>
+    <h2>先選一個方案</h2>
+    <p class="sub">Typefree 幫你幹兩件事：把話變成字（識別，必須）+ 把字理順（潤色，可選）。這兩件事可以用阿里、也可以用火山（豆包）。給你兩個推薦方案：</p>
+  </div></div>
+
+  <div class="plans">
+    <div class="plan reco">
+      <span class="tag">👍 新手推薦</span>
+      <h3>全用阿里</h3>
+      <span class="keys">只拿 1 把鑰匙</span>
+      <p>識別和潤色都用阿里，<b>一把鑰匙全搞定</b>，最省事。識別送 10 小時免費額度。</p>
+      <p class="who">適合：想最快搞定的人。</p>
+    </div>
+    <div class="plan">
+      <h3>豆包識別 + 阿里潤色</h3>
+      <span class="keys">要拿 2 把鑰匙</span>
+      <p>識別用<b>火山（豆包）</b>，免費時長更多（三檔共約 60 小時）；潤色還是用<b>阿里</b>（效果更好）。</p>
+      <p class="who">適合：想要更多免費識別時長的人。</p>
+    </div>
+  </div>
+  <p class="sub" style="margin-top:16px;">選好了？按你選的方案往下看：<b>全用阿里只看第 2 步；要用豆包識別的，再加看第 3 步。</b></p>
+
+  <!-- STEP 2: 阿里 -->
+  <div class="step-h" id="s-ali"><span class="step-n">2</span><div>
+    <h2>拿阿里的鑰匙</h2>
+    <p class="sub">這把鑰匙識別和潤色都能用（同一個）。兩個方案都需要它。</p>
+  </div></div>
+
+  <ol class="steps">
+    <li><b>開啟阿里百鍊控制檯。</b><br>
+      <a class="key-link" href="https://bailian.console.aliyun.com/" target="_blank">↗ 開啟阿里百鍊</a><br>
+      第一次會讓你註冊 / 登入阿里雲賬號、同意一個協議。<b>同意後會自動開通、自動送你免費額度，不用單獨申請任何東西。</b>（控制檯＝阿里的網站後臺。）
+    </li>
+    <li><b>點左側選單最下面的「API Key」。</b></li>
+    <li><b>新賬號第一次會讓你先做「實名認證」。</b>點建立時如果彈出「您未完善個人基本資訊」，點彈框裡的<b>「去完善」</b>，按提示填你的<b>真實姓名 + 身份證號</b>（這是阿里的規定，大約 2 分鐘）。填完回到這個頁面、重新整理一下就能建立了。
+      <figure>
+        <div class="shot">
+          <img src="guide-assets/g_ali_realname.png" alt="阿里新使用者實名認證提示">
+          <div class="mask" style="top:0;right:0;width:13%;height:7%;"></div>
+          <div class="pin" style="top:19%;left:71.5%;width:8.5%;height:6%;"><span class="lbl">點去完善</span></div>
+        </div>
+        <figcaption>新賬號第一次會彈這個提示。點「去完善」做實名認證（填真實姓名和身份證），2 分鐘搞定。<b>已經實名過的老賬號看不到這個，直接跳下一步。</b></figcaption>
+      </figure>
+    </li>
+    <li><b>點頁面正中紫色的「建立 API Key」按鈕。</b>
+      <figure>
+        <div class="shot">
+          <img src="guide-assets/g_ali_apikey.png" alt="阿里百鍊 API Key 頁">
+          <div class="mask" style="top:0;right:0;width:13%;height:7%;"></div>
+          <div class="pin" style="top:60%;left:45.5%;width:13.5%;height:6.5%;"><span class="lbl">點這裡建立</span></div>
+        </div>
+        <figcaption>API Key 頁正中間就是「建立 API Key」按鈕（不是右上角）。</figcaption>
+      </figure>
+    </li>
+    <li><b>彈出的框裡：業務空間選「預設業務空間」</b>（一定要選，不選點確定會飄紅），<b>描述可以不填，許可權保持「全部」，點「確定」。</b>
+      <figure>
+        <div class="shot">
+          <img src="guide-assets/g_ali_create.png" alt="阿里建立 API Key 對話方塊">
+          <div class="mask" style="top:0;right:0;width:13%;height:7%;"></div>
+          <div class="pin" style="top:26.5%;left:26.5%;width:47%;height:6.5%;"><span class="lbl">選「預設業務空間」</span></div>
+          <div class="pin" style="top:81.5%;left:65.5%;width:10.5%;height:6.5%;"><span class="lbl">點確定</span></div>
+        </div>
+        <figcaption>業務空間選「預設業務空間」，描述可留空，許可權保持「全部」，點確定。</figcaption>
+      </figure>
+    </li>
+    <li><b>建立成功會彈出完整鑰匙（<code>sk-</code> 開頭），馬上點「複製」存好！</b>
+      <figure>
+        <div class="shot">
+          <img src="guide-assets/g_ali_success.png" alt="阿里 API Key 建立成功，點複製儲存">
+          <div class="mask" style="top:0;right:0;width:13%;height:7%;"></div>
+          <div class="pin" style="top:27%;left:63.5%;width:9.5%;height:6.5%;"><span class="lbl">點複製</span></div>
+          <div class="pin" style="top:68.5%;left:59.5%;width:9.5%;height:6%;"><span class="lbl">或點下載存成檔案</span></div>
+        </div>
+        <figcaption>鑰匙那行只顯示這一次（圖裡已打碼）。點「複製」粘到備忘錄，或點「下載」存成檔案。</figcaption>
+      </figure>
+      <div class="note warn" style="margin-top:11px;">
+        <b>⚠️ 重要：</b>這串完整的鑰匙<b>只顯示這一次</b>，關掉視窗後就只能看到前後幾位了。所以一定要<b>當場複製、存到備忘錄裡</b>。
+      </div>
+    </li>
+  </ol>
+
+  <!-- STEP 3: 火山 -->
+  <div class="step-h" id="s-volc"><span class="step-n">3</span><div>
+    <h2>拿火山（豆包）的鑰匙</h2>
+    <p class="sub">只有「豆包識別 + 阿里潤色」方案才需要這一步。全用阿里的可以跳過。</p>
+  </div></div>
+
+  <ol class="steps">
+    <li><b>開啟火山語音控制檯。</b><br>
+      <a class="key-link ghost" href="https://console.volcengine.com/speech/new/overview?projectName=default" target="_blank">↗ 開啟火山語音控制檯（新版）</a><br>
+      第一次會讓你註冊 / 登入火山引擎賬號。
+    </li>
+    <li><b>新賬號先做個「實名認證」</b>（火山要求實名後才能開通服務）。在「賬號管理 → 實名認證」裡選<b>個人認證</b>，用<b>微信 / 抖音 APP 掃臉</b>最快，手機掃一下臉，1 分鐘搞定。
+      <figure>
+        <div class="shot">
+          <img src="guide-assets/g_volc_realname.png" alt="火山引擎個人實名認證">
+        </div>
+        <figcaption>實名認證選「個人認證 → 微信/抖音 APP 掃臉認證」（圖中紅框），手機掃臉最快。已實名的老賬號跳過這步。</figcaption>
+      </figure>
+    </li>
+    <li><b>⚠️ 關鍵一步：開通「錄音檔案識別 1.0」和「2.0」兩個服務。</b>火山和阿里不一樣——<b>識別服務要單獨開通</b>（都免費送額度）。在左側「<b>系統管理 → 開通管理</b>」的「大模型」標籤頁裡，找到這兩個、各點一次「開通」：<br>　·「<b>錄音檔案識別 1.0</b>」＝ App 的<b>極速版 + 標準版</b>（這兩檔都在它裡面）<br>　·「<b>錄音檔案識別 2.0</b>」＝ App 的 <b>2.0</b><br>開通這兩個，App 三檔就都能用了。
+      <figure>
+        <div class="shot">
+          <img src="guide-assets/g_volc_activate.png" alt="火山開通管理頁">
+          <div class="mask" style="top:0;right:0;width:10%;height:9%;"></div>
+          <div class="pin" style="top:13%;left:8%;width:28%;height:6.5%;"><span class="lbl">① 錄音檔案識別2.0</span></div>
+          <div class="pin" style="top:13%;left:89.5%;width:7.5%;height:6.5%;"><span class="lbl">開通</span></div>
+          <div class="pin" style="top:49%;left:8%;width:28%;height:6.5%;"><span class="lbl">② 錄音檔案識別1.0</span></div>
+          <div class="pin" style="top:49%;left:89.5%;width:7.5%;height:6.5%;"><span class="lbl">開通</span></div>
+        </div>
+        <figcaption>系統管理 → 開通管理 →「大模型」標籤頁。把「錄音檔案識別 1.0」和「2.0」各點一次「開通」（都免費送額度）。<b>1.0 裡含極速版+標準版，2.0 是 2.0 檔；漏開 App 用到時會失敗。</b></figcaption>
+      </figure>
+    </li>
+    <li><b>開通後，去「API Key 管理」拿鑰匙。</b><br>
+      <span class="note tip" style="display:block;margin:8px 0;">📍 <b>這個頁面在哪？</b>在<b>左側導航欄</b>往下劃到底，「<b>系統管理</b>」分組裡（「開通管理、用量統計」下面）就是「<b>API Key 管理</b>」，點它進入。</span>
+      進入後，平臺已自動建好一把（名字像「預設體驗中心使用」），點鑰匙後面的「👁 眼睛」看到完整的、點複製即可；或點左上「+ 建立 API Key」建個新的。
+      <figure>
+        <div class="shot">
+          <img src="guide-assets/g_volc_apikey.png" alt="火山語音 API Key 管理頁">
+          <div class="mask" style="top:0;right:0;width:10%;height:9%;"></div>
+          <div class="pin" style="top:17.5%;left:14%;width:12%;height:6%;"><span class="lbl">想建新的點這</span></div>
+          <div class="pin" style="top:29%;left:51.5%;width:9%;height:6%;"><span class="lbl">點👁看完整→複製</span></div>
+        </div>
+        <figcaption>「API Key 管理」頁（入口見上方提示）。左上「+ 建立 API Key」可建新鑰匙；預設那把點「👁 眼睛」看完整、複製即可。</figcaption>
+      </figure>
+    </li>
+  </ol>
+
+  <!-- STEP 4 -->
+  <div class="step-h" id="s-fill"><span class="step-n">4</span><div>
+    <h2>把鑰匙填進 Typefree</h2>
+  </div></div>
+  <ol class="steps">
+    <li>開啟 Typefree <b>設定 → 模型</b>。</li>
+    <li><b>「語音識別」選服務商：</b>用阿里就選「百鍊（阿里）」，用豆包就選「火山引擎（豆包）」。</li>
+    <li>把剛才複製的鑰匙<b>粘進 API Key 框</b>。</li>
+    <li><b>點「測試連線」，看到 ✓ 就成功了！</b></li>
+    <li><b>潤色同理：</b>「語音最佳化」選「百鍊（阿里）」。<b>如果識別也用了阿里，這裡會自動複用同一把鑰匙，不用再填。</b></li>
+  </ol>
+
+  <!-- FAQ -->
+  <div class="step-h" id="s-faq"><span class="step-n">?</span><div><h2>常見問題</h2></div></div>
+  <details><summary>找不到「API Key」選單怎麼辦？</summary>
+    <p>阿里：在控制檯<b>左側選單最下面</b>。火山：在左側<b>「系統管理」</b>下面的「API Key 管理」。</p></details>
+  <details><summary>免費額度能用多久？會偷偷扣錢嗎？</summary>
+    <p>阿里 90 天、火山半年，<b>到期作廢、不是永久</b>。⚠️ 阿里額度用完後會<b>自動扣費</b>，建議進阿里控制檯開啟「免費額度用完即停」開關，就絕不會偷偷扣錢了。</p></details>
+  <details><summary>點「測試連線」失敗？</summary>
+    <p>八成是鑰匙沒複製全（前後帶了空格），或者服務商選錯了。重新複製完整鑰匙、確認選對「百鍊（阿里）」還是「火山引擎（豆包）」再試。</p></details>
+
+  <!-- 詞典 -->
+  <div class="step-h" id="s-dict"><span class="step-n">✦</span><div><h2>看不懂的詞，這裡查</h2></div></div>
+  <div class="dict">
+    <div><b>API Key</b>：一把「鑰匙」，讓 App 能用你賬號下的 AI 服務。</div>
+    <div><b>控制檯</b>：服務商的網站後臺，管理你賬號的地方。</div>
+    <div><b>百鍊 / DashScope</b>：阿里的 AI 平臺，識別和潤色都在它上面。</div>
+    <div><b>豆包語音 / 火山引擎</b>：火山（位元組）的語音 AI，識別用它。</div>
+  </div>
+
+</div><!-- /.doc-main -->
+</div><!-- /.doc-wrap -->
+
+<footer><div class="wrap">Typefree · 你的語音、你的 API、你的資料 —— 全在你自己手裡。</div></footer>
+<script>
+(function(){
+  var links = Array.prototype.slice.call(document.querySelectorAll('.toc a'));
+  var secs = links.map(function(a){ return document.getElementById(a.getAttribute('href').slice(1)); });
+  function spy(){
+    var cur = 0;
+    for(var i=0;i<secs.length;i++){ if(secs[i] && secs[i].getBoundingClientRect().top <= 100) cur = i; }
+    links.forEach(function(a,i){ a.classList.toggle('active', i===cur); });
+  }
+  window.addEventListener('scroll', spy, {passive:true});
+  window.addEventListener('resize', spy);
+  spy();
+  links.forEach(function(a){ a.addEventListener('click', function(e){
+    e.preventDefault();
+    var el = document.getElementById(a.getAttribute('href').slice(1));
+    if(el) el.scrollIntoView({behavior:'smooth', block:'start'});
+  }); });
+})();
+</script>
+<script>(function(){var P=document.documentElement.getAttribute("data-tflang");var sw=document.querySelector(".langsw");if(!sw)return;sw.querySelectorAll("a").forEach(function(a){if(a.dataset.l===P)a.classList.add("on");a.addEventListener("click",function(){try{localStorage.setItem("tf_lang",this.dataset.l);}catch(e){}});});})();</script>
+</body>
+</html>

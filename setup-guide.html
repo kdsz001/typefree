@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh-CN" data-tflang="zh-Hans">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -34,8 +34,9 @@
     background:rgba(252,252,253,.72);backdrop-filter:saturate(180%) blur(20px);}
   nav .wrap{display:flex;align-items:center;justify-content:space-between;min-height:58px;}
   .brand{display:inline-flex;align-items:center;gap:10px;font-size:16px;font-weight:700;letter-spacing:-.01em;}
-  .brand .logo{width:26px;height:26px;border-radius:7px;background:var(--ink);display:inline-flex;
-    align-items:center;justify-content:center;color:#fff;font-size:13px;font-weight:800;}
+  .brand .logo{width:26px;height:26px;border-radius:7px;background:#fff;border:1px solid var(--line);display:inline-flex;
+    align-items:center;justify-content:center;color:var(--ink);}
+  .brand .logo svg{width:20px;height:20px;}
   .nav-links a{font-size:14px;font-weight:550;color:var(--ink2);}
   .nav-links a:hover{color:var(--ink);}
 
@@ -133,12 +134,19 @@
   .doc-main{flex:1;min-width:0;max-width:840px;}
   .step-h[id]{scroll-margin-top:74px;}
   @media(max-width:920px){.doc-wrap{display:block;}.toc{display:none;}.doc-main{max-width:none;}}
+
+  .langsw{display:inline-flex;align-items:center;border:1px solid var(--line);border-radius:8px;overflow:hidden;margin-left:14px;vertical-align:middle;}
+  .langsw a{padding:5px 8px;font-size:12px;font-weight:600;color:var(--ink3);border-left:1px solid var(--line2);}
+  .langsw a:first-child{border-left:0;}
+  .langsw a.on{color:var(--ink);background:var(--alt2);}
 </style>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='5' fill='%23ffffff'/%3E%3Cg fill='%231D1D1F'%3E%3Crect x='5.25' y='9.77' width='1.73' height='4.43' rx='0.87'/%3E%3Crect x='8.18' y='7.85' width='1.73' height='8.27' rx='0.87'/%3E%3Crect x='11.13' y='6.47' width='1.73' height='11.04' rx='0.87'/%3E%3Crect x='14.06' y='8.39' width='1.73' height='7.2' rx='0.87'/%3E%3Crect x='16.99' y='10.05' width='1.73' height='3.87' rx='0.87'/%3E%3C/g%3E%3C/svg%3E">
+<script>(function(){var P="zh-Hans";try{var s=localStorage.getItem("tf_lang");var w=s;if(!w){var n=(navigator.language||"").toLowerCase();w=n.indexOf("en")===0?"en":/hant|tw|hk|mo/.test(n)?"zh-Hant":"zh-Hans";}if(w!==P){var m={"zh-Hans":"setup-guide.html","zh-Hant":"setup-guide.zh-Hant.html","en":"setup-guide.en.html"};var t=m[w];var cur=location.pathname.split("/").pop();if(t&&t!==cur){location.replace(t);}}}catch(e){}})();</script>
 </head>
 <body>
 <nav><div class="wrap">
-  <a class="brand" href="index.html"><span class="logo">T</span>Typefree</a>
-  <div class="nav-links"><a href="index.html">← 返回首页</a></div>
+  <a class="brand" href="index.html"><span class="logo"><svg viewBox="0 0 24 24" fill="currentColor"><rect x="5.25" y="9.77" width="1.73" height="4.43" rx="0.87"/><rect x="8.18" y="7.85" width="1.73" height="8.27" rx="0.87"/><rect x="11.13" y="6.47" width="1.73" height="11.04" rx="0.87"/><rect x="14.06" y="8.39" width="1.73" height="7.2" rx="0.87"/><rect x="16.99" y="10.05" width="1.73" height="3.87" rx="0.87"/></svg></span>Typefree</a>
+  <div class="nav-links"><a href="index.html">← 返回首页</a><span class="langsw"><a href="setup-guide.html" data-l="zh-Hans">简</a><a href="setup-guide.zh-Hant.html" data-l="zh-Hant">繁</a><a href="setup-guide.en.html" data-l="en">EN</a></span></div>
 </div></nav>
 
 <header class="hero"><div class="wrap hero-inner">
@@ -349,5 +357,6 @@
   }); });
 })();
 </script>
+<script>(function(){var P=document.documentElement.getAttribute("data-tflang");var sw=document.querySelector(".langsw");if(!sw)return;sw.querySelectorAll("a").forEach(function(a){if(a.dataset.l===P)a.classList.add("on");a.addEventListener("click",function(){try{localStorage.setItem("tf_lang",this.dataset.l);}catch(e){}});});})();</script>
 </body>
 </html>

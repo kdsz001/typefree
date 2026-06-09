@@ -745,10 +745,10 @@
           <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>一個啟用碼授權 1 臺 Mac</li>
           <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>30 天內不滿意可全額退款</li>
         </ul>
-        <a class="btn primary lg" href="mailto:ray@typefree.app?subject=%E8%B4%AD%E4%B9%B0%20Typefree%20%E4%B9%B0%E6%96%AD%E7%89%88">購買買斷版 · $19</a>
+        <a class="btn primary lg tf-buy" href="#pricing">購買買斷版 · $19</a>
       </div>
     </div>
-    <p class="pnote">結賬通道即將上線，將支援 微信 / 支付寶 / 銀行卡（由 Paddle 提供）。當前可郵件聯絡購買。</p>
+    <p class="pnote">支援 微信 / 支付寶 / 銀行卡 等多種支付，由 Paddle 安全結算。</p>
   </div>
 </section>
 
@@ -859,6 +859,18 @@
       if(a.dataset.l===P)a.classList.add('on');
       a.addEventListener('click',function(){try{localStorage.setItem('tf_lang',this.dataset.l);}catch(e){}});
     });})();
+</script>
+<script src="https://cdn.paddle.com/paddle/v2/paddle.js"></script>
+<script>
+  try{
+    Paddle.Initialize({ token: "live_dc739a05249f479cbf1d379bda6" });
+    document.querySelectorAll(".tf-buy").forEach(function(b){
+      b.addEventListener("click", function(e){
+        e.preventDefault();
+        Paddle.Checkout.open({ items:[{ priceId:"pri_01ktpracbxxhfm2n9dvfs0rd70", quantity:1 }], discountId:"dsc_01ktprr2bfbxj2qt5ay291b4n2" });
+      });
+    });
+  }catch(err){ console.error("Paddle init failed", err); }
 </script>
 </body>
 </html>

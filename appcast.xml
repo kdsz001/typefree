@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<rss version="2.0" xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle" xmlns:dc="http://purl.org/dc/elements/1.1/">
+    <channel>
+        <title>Typefree</title>
+        <link>https://typefree.app/appcast.xml</link>
+        <description>Typefree updates</description>
+        <language>zh</language>
+        <item>
+            <title>2.0</title>
+            <sparkle:version>2.0.0</sparkle:version>
+            <sparkle:shortVersionString>2.0</sparkle:shortVersionString>
+            <pubDate>Wed, 10 Jun 2026 14:52:13 +0000</pubDate>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+            <enclosure url="https://github.com/kdsz001/typefree/releases/download/v2.0/Typefree-2.0.dmg" sparkle:edSignature="DnToPopQP8pX+8KSVx1m2D8pG7NflpMvECR2frOJo3lBZ80PHIjMB4C6gOlqci6f9oMnVNfNqKMcl2R98bVyBA==" length="1980411" type="application/octet-stream"/>
+        </item>
+    </channel>
+</rss>

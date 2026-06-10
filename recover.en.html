@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>License Recovery · Typefree</title>
+<meta name="description" content="Enter the email you used at checkout and we'll resend your Typefree license code, with a reset-activation link for device transfers.">
+<style>
+ :root{--bg:#FCFCFD;--alt:#F5F5F7;--ink:#1D1D1F;--ink2:#515154;--ink3:#86868B;--line:rgba(0,0,0,.09);--line2:rgba(0,0,0,.06);--ok:#2E8762;--sans:-apple-system,BlinkMacSystemFont,"PingFang SC","Segoe UI",sans-serif;--maxw:760px;}
+ *{box-sizing:border-box;}
+ body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);line-height:1.72;-webkit-font-smoothing:antialiased;}
+ a{color:var(--ink);text-decoration:none;} a:hover{color:var(--ok);}
+ .wrap{width:min(var(--maxw),calc(100% - 48px));margin:0 auto;}
+ nav{position:sticky;top:0;z-index:10;background:rgba(252,252,253,.82);backdrop-filter:saturate(180%) blur(20px);border-bottom:1px solid var(--line2);}
+ nav .wrap{display:flex;align-items:center;justify-content:space-between;min-height:60px;gap:16px;}
+ .brand{font-weight:700;font-size:17px;letter-spacing:-.01em;}
+ .nav-links{display:flex;gap:18px;color:var(--ink2);font-size:14px;flex-wrap:wrap;}
+ .nav-links a:hover{color:var(--ink);}
+ main{padding:54px 0 80px;}
+ h1{font-size:clamp(28px,5vw,34px);font-weight:800;letter-spacing:-.02em;margin:0 0 6px;}
+ p{margin:0 0 12px;color:var(--ink2);font-size:15.5px;}
+ strong{color:var(--ink);font-weight:650;}
+ form{margin:26px 0 0;max-width:420px;}
+ input{width:100%;font-size:16px;padding:12px 14px;border:1px solid var(--line);border-radius:10px;margin:0 0 14px;background:#fff;color:var(--ink);font-family:var(--sans);}
+ input:focus{outline:none;border-color:var(--ink3);}
+ button{font-size:15px;font-weight:650;padding:12px 28px;border:0;border-radius:10px;background:var(--ink);color:#fff;cursor:pointer;font-family:var(--sans);}
+ button:hover{opacity:.85;} button:disabled{opacity:.5;cursor:default;}
+ .msg{display:none;margin-top:22px;padding:16px 18px;border-radius:10px;background:var(--alt);font-size:14.5px;color:var(--ink2);max-width:420px;}
+ footer{border-top:1px solid var(--line2);padding:28px 0;color:var(--ink3);font-size:13.5px;}
+ footer .wrap{display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px;}
+ footer a{color:var(--ink2);}
+ .langsw{display:inline-flex;align-items:center;border:1px solid var(--line);border-radius:8px;overflow:hidden;margin-left:4px;}
+ .langsw a{padding:5px 8px;font-size:12px;font-weight:600;color:var(--ink3);border-left:1px solid var(--line2);}
+ .langsw a:first-child{border-left:0;}
+ .langsw a.on{color:var(--ink);background:var(--alt);}
+</style>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='5' fill='%23ffffff'/%3E%3Cg fill='%231D1D1F'%3E%3Crect x='5.25' y='9.77' width='1.73' height='4.43' rx='0.87'/%3E%3Crect x='8.18' y='7.85' width='1.73' height='8.27' rx='0.87'/%3E%3Crect x='11.13' y='6.47' width='1.73' height='11.04' rx='0.87'/%3E%3Crect x='14.06' y='8.39' width='1.73' height='7.2' rx='0.87'/%3E%3Crect x='16.99' y='10.05' width='1.73' height='3.87' rx='0.87'/%3E%3C/g%3E%3C/svg%3E">
+<script>(function(){var P="en";try{var s=localStorage.getItem("tf_lang");var w=s;if(!w){var n=(navigator.language||"").toLowerCase();w=n.indexOf("en")===0?"en":/hant|tw|hk|mo/.test(n)?"zh-Hant":"zh-Hans";}if(w!==P){var m={"zh-Hans":"recover.html","zh-Hant":"recover.zh-Hant.html","en":"recover.en.html"};var t=m[w];var cur=location.pathname.split("/").pop();if(t&&t!==cur){location.replace(t);}}}catch(e){}})();</script>
+</head>
+<body>
+<nav><div class="wrap">
+  <a class="brand" href="index.en.html">Typefree</a>
+  <div class="nav-links">
+    <a href="index.en.html#pricing">Pricing</a>
+    <a href="refund.en.html">Refund</a>
+    <a href="privacy.en.html">Privacy</a>
+    <a href="terms.en.html">Terms</a>
+    <span class="langsw"><a href="recover.html" data-l="zh-Hans">简</a><a href="recover.zh-Hant.html" data-l="zh-Hant">繁</a><a href="recover.en.html" data-l="en">EN</a></span>
+  </div>
+</div></nav>
+
+<main><div class="wrap">
+  <h1>License Recovery</h1>
+  <p>Enter the <strong>email you used at checkout</strong> and we'll resend your license code. The email also includes a <strong>reset-activation link</strong> — use it when you switch to a new Mac, or your old one broke or was reinstalled, to free up the seat and activate again.</p>
+  <form id="f">
+    <input id="email" type="email" required placeholder="you@example.com" autocomplete="email">
+    <button id="btn" type="submit">Send my code</button>
+  </form>
+  <div class="msg" id="msg">✅ If this email has a purchase on record, the code is on its way (within a few minutes — check spam too).<br><br>Nothing arrived? Email <a href="mailto:ray@typefree.app"><strong>ray@typefree.app</strong></a> with your purchase email.</div>
+</div></main>
+
+<footer><div class="wrap">
+  <span>© 2026 Typefree</span>
+  <a href="mailto:ray@typefree.app">ray@typefree.app</a>
+</div></footer>
+<script>
+(function(){var P="en";var sw=document.querySelector(".langsw");if(!sw)return;sw.querySelectorAll("a").forEach(function(a){if(a.dataset.l===P)a.classList.add("on");a.addEventListener("click",function(){try{localStorage.setItem("tf_lang",this.dataset.l);}catch(e){}});});})();
+document.getElementById('f').addEventListener('submit', async function (e) {
+  e.preventDefault();
+  var btn = document.getElementById('btn');
+  btn.disabled = true; btn.textContent = 'Sending…';
+  try {
+    await fetch('https://api.typefree.app/recover', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({email: document.getElementById('email').value.trim()})
+    });
+  } catch (_) {}
+  document.getElementById('msg').style.display = 'block';
+  btn.disabled = false; btn.textContent = 'Send my code';
+});
+</script>
+</body>
+</html>

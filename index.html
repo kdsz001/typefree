@@ -284,8 +284,10 @@
   .pcard.feat{border-color:var(--ink);box-shadow:var(--shadow-sm);}
   .pcard .ptag{align-self:flex-start;height:26px;padding:0 13px;border-radius:999px;background:var(--alt);color:var(--ink2);font-size:12.5px;font-weight:650;display:inline-flex;align-items:center;margin-bottom:18px;}
   .pcard.feat .ptag{background:var(--ink);color:#fff;}
-  .pcard .price{display:flex;align-items:baseline;gap:7px;}
+  .pcard .price{display:flex;align-items:baseline;gap:9px;flex-wrap:wrap;}
   .pcard .price .amt{font-size:42px;font-weight:800;letter-spacing:-.03em;}
+  .pcard .price .was{color:var(--ink3);font-size:21px;font-weight:650;text-decoration:line-through;text-decoration-thickness:2px;}
+  .pcard .price .off{align-self:center;height:23px;padding:0 10px;border-radius:999px;background:rgba(46,135,98,.12);color:var(--ok);font-size:12.5px;font-weight:750;display:inline-flex;align-items:center;letter-spacing:.01em;}
   .pcard .price .per{color:var(--ink3);font-size:15px;font-weight:600;}
   .pcard .pdesc{color:var(--ink2);font-size:15px;margin:10px 0 20px;}
   .pcard ul{margin:0 0 24px;padding:0;list-style:none;display:flex;flex-direction:column;gap:11px;flex:1;}
@@ -737,7 +739,7 @@
       </div>
       <div class="pcard feat">
         <span class="ptag">买断版</span>
-        <div class="price"><span class="amt">$19</span><span class="per">一次性 · 永久</span></div>
+        <div class="price"><span class="amt">$19</span><span class="was">$49</span><span class="off">限时 -61%</span><span class="per">一次性 · 永久</span></div>
         <p class="pdesc">解锁无限输入，一次付费永久使用，不是订阅。</p>
         <ul>
           <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg><b>无限输入</b>，不再有每日字数限制</li>

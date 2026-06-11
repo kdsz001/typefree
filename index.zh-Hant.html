@@ -748,7 +748,7 @@
         <a class="btn primary lg tf-buy" href="#pricing">購買買斷版 · $19</a>
       </div>
     </div>
-    <p class="pnote">支援 微信 / 支付寶 / 銀行卡 等多種支付，由 Paddle 安全結算。<br>微信支付的到帳確認可能需要 1~10 分鐘，啟用碼會自動寄到信箱，請勿重複付款。</p>
+    <p class="pnote">支援 微信 / 支付寶 / 銀行卡 等多種支付，由 Paddle 安全結算。<br>沒看到微信支付？在付款頁把「國家」選成中國即可。微信到帳確認可能需要 1~10 分鐘，啟用碼會自動寄到信箱，請勿重複付款。</p>
   </div>
 </section>
 
@@ -868,15 +868,12 @@
     document.querySelectorAll(".tf-buy").forEach(function(b){
       b.addEventListener("click", function(e){
         e.preventDefault();
-        var opts = {
+        // ⚠ 不要給 Checkout.open 傳 customer.address 預設國家：Paddle 校驗要求 customer 必須帶
+        // email 或 id（付款前拿不到），只傳 address 會當場拋錯、結帳框彈不出來（2026-06-11 實測）。
+        Paddle.Checkout.open({
           settings: { successUrl: "https://typefree.app/thanks.zh-Hant.html" },
           items:[{ priceId:"pri_01ktpracbxxhfm2n9dvfs0rd70", quantity:1 }],
-          discountId:"dsc_01ktprr2bfbxj2qt5ay291b4n2" };
-        // 電腦語言列表裡有簡體中文 → 預設國家=中國（Paddle 按 IP 猜國家，掛梯子會把微信支付入口藏起來）
-        try{ var ls=(navigator.languages&&navigator.languages.length)?navigator.languages:[navigator.language||""];
-          for(var i=0;i<ls.length;i++){ var l=String(ls[i]).toLowerCase();
-            if(l.indexOf("zh")===0 && !/hant|tw|hk|mo/.test(l)){ opts.customer={ address:{ countryCode:"CN" } }; break; } } }catch(e){}
-        Paddle.Checkout.open(opts);
+          discountId:"dsc_01ktprr2bfbxj2qt5ay291b4n2" });
       });
     });
   }catch(err){ console.error("Paddle init failed", err); }

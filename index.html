@@ -748,7 +748,7 @@
         <a class="btn primary lg tf-buy" href="#pricing">购买买断版 · $19</a>
       </div>
     </div>
-    <p class="pnote">支持 微信 / 支付宝 / 银行卡 等多种支付，由 Paddle 安全结算。<br>微信支付的到账确认可能需要 1~10 分钟，激活码会自动发送到邮箱，请勿重复支付。</p>
+    <p class="pnote">支持 微信 / 支付宝 / 银行卡 等多种支付，由 Paddle 安全结算。<br>没看到微信支付？在付款页把「国家」选成中国即可。微信到账确认可能需要 1~10 分钟，激活码会自动发到邮箱，请勿重复支付。</p>
   </div>
 </section>
 
@@ -868,11 +868,11 @@
     document.querySelectorAll(".tf-buy").forEach(function(b){
       b.addEventListener("click", function(e){
         e.preventDefault();
-        // 简中页买家以大陆用户为主：预设国家=中国，让微信支付直接可见。
-        // Paddle 默认按 IP 猜国家，挂梯子会猜成国外、把微信入口藏起来；预设后买家仍可在表单里自行更改。
+        // ⚠ 不要给 Checkout.open 传 customer.address 预设国家：Paddle 校验要求 customer 必须带
+        // email 或 id（买家付款前我们拿不到），只传 address 会当场抛错、结账框弹不出来（2026-06-11 实测）。
+        // 挂梯子用户看不到微信支付的问题改由 pnote 文案引导（付款页把「国家」选成中国）。
         Paddle.Checkout.open({
           settings: { successUrl: "https://typefree.app/thanks.html" },
-          customer: { address: { countryCode: "CN" } },
           items:[{ priceId:"pri_01ktpracbxxhfm2n9dvfs0rd70", quantity:1 }],
           discountId:"dsc_01ktprr2bfbxj2qt5ay291b4n2" });
       });

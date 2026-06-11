@@ -748,7 +748,7 @@
         <a class="btn primary lg tf-buy" href="#pricing">购买买断版 · $19</a>
       </div>
     </div>
-    <p class="pnote">支持 微信 / 支付宝 / 银行卡 等多种支付，由 Paddle 安全结算。</p>
+    <p class="pnote">支持 微信 / 支付宝 / 银行卡 等多种支付，由 Paddle 安全结算。<br>微信支付的到账确认可能需要 1~10 分钟，激活码会自动发送到邮箱，请勿重复支付。</p>
   </div>
 </section>
 
@@ -868,7 +868,13 @@
     document.querySelectorAll(".tf-buy").forEach(function(b){
       b.addEventListener("click", function(e){
         e.preventDefault();
-        Paddle.Checkout.open({ items:[{ priceId:"pri_01ktpracbxxhfm2n9dvfs0rd70", quantity:1 }], discountId:"dsc_01ktprr2bfbxj2qt5ay291b4n2" });
+        // 简中页买家以大陆用户为主：预设国家=中国，让微信支付直接可见。
+        // Paddle 默认按 IP 猜国家，挂梯子会猜成国外、把微信入口藏起来；预设后买家仍可在表单里自行更改。
+        Paddle.Checkout.open({
+          settings: { successUrl: "https://typefree.app/thanks.html" },
+          customer: { address: { countryCode: "CN" } },
+          items:[{ priceId:"pri_01ktpracbxxhfm2n9dvfs0rd70", quantity:1 }],
+          discountId:"dsc_01ktprr2bfbxj2qt5ay291b4n2" });
       });
     });
   }catch(err){ console.error("Paddle init failed", err); }

@@ -189,22 +189,6 @@
   .svc{display:inline-flex;align-items:center;gap:7px;height:32px;padding:0 13px;border-radius:999px;background:var(--bg);border:1px solid var(--line2);font-size:13px;font-weight:600;color:var(--ink2);}
   .svc .g{width:7px;height:7px;border-radius:50%;background:var(--ok);}
 
-  /* ===== 全平台三卡 ===== */
-  .platforms{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;}
-  .plat{padding:28px;border:1px solid var(--line);border-radius:var(--r);background:var(--card);
-    display:flex;flex-direction:column;transition:transform .18s ease,box-shadow .18s ease;}
-  .plat:hover{transform:translateY(-3px);box-shadow:var(--shadow-sm);}
-  .plat .pic{width:48px;height:48px;border-radius:13px;background:var(--alt);color:var(--ink);
-    display:inline-flex;align-items:center;justify-content:center;margin-bottom:18px;}
-  .plat .pic svg{width:25px;height:25px;}
-  .plat h3{font-size:20px;font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
-  .badge{height:22px;padding:0 9px;border-radius:999px;font-size:11.5px;font-weight:650;display:inline-flex;align-items:center;letter-spacing:.01em;}
-  .badge.live{background:var(--ok-soft);color:var(--ok);}
-  .badge.soon{background:var(--alt2);color:var(--ink3);}
-  .plat p{color:var(--ink2);font-size:14.5px;line-height:1.6;flex:1;}
-  .plat ul{margin:14px 0 0;padding:0;list-style:none;display:flex;flex-direction:column;gap:8px;}
-  .plat li{display:flex;gap:9px;color:var(--ink2);font-size:14px;}
-  .plat li svg{width:16px;height:16px;color:var(--ok);flex:none;margin-top:3px;}
 
   /* ===== 安全边界（深色 band）===== */
   .secure{background:var(--dark);color:#fff;border:0;}
@@ -322,7 +306,7 @@
   /* ===== 响应式 ===== */
   @media(max-width:960px){
     .ba-grid{grid-template-columns:1fr;}
-    .flow,.stats,.platforms,.start{grid-template-columns:repeat(2,1fr);}
+    .flow,.stats,.start{grid-template-columns:repeat(2,1fr);}
     .step .arr{display:none;}
   }
   @media(max-width:760px){
@@ -341,7 +325,7 @@
     .wrap{width:calc(100% - 36px);}
     h1{font-size:32px;line-height:1.14;}
     .hb{display:none;}
-    .flow,.stats,.platforms,.start,.sflow{grid-template-columns:1fr;}
+    .flow,.stats,.start,.sflow{grid-template-columns:1fr;}
     .sstep{border-left:0;border-top:1px solid rgba(255,255,255,.11);}
     .sstep:first-child{border-top:0;}
     .nav-cta .btn:not(.primary){display:none;}
@@ -363,7 +347,6 @@
     <div class="nav-links">
       <a href="#effect">效果</a>
       <a href="#how">原理</a>
-      <a href="#platforms">全平台</a>
       <a href="#security">安全</a>
       <a href="#pricing">价格</a>
       <a href="setup-guide.html">配置教程</a>
@@ -389,14 +372,12 @@
     <p class="sub">按住快捷键说话，松手即自动识别、去掉口水词、理顺句子，整理好的结果直接落到光标处。录音、数据、API 凭证，全都在你自己手里。</p>
     <div class="cta">
       <a class="btn primary lg" href="https://github.com/kdsz001/typefree/releases/latest/download/Typefree.dmg"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>免费下载 Mac 版</a>
-      <a class="btn lg" href="https://github.com/kdsz001/typefree/releases/download/windows-m1-test/Typefree-Windows-test.zip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>下载 Windows 测试版</a>
       <a class="btn lg" href="#pricing">查看价格 →</a>
     </div>
     <div class="trust">
       <span><i class="g"></i>macOS 12+</span>
       <span><i class="g"></i>已签名 · 已公证</span>
       <span><i class="g"></i>一次买断 · 不订阅</span>
-      <span><i class="g"></i>同源支持 iPhone / 输入法键盘</span>
     </div>
 
     <!-- 产品演示卡 -->
@@ -458,8 +439,8 @@
       </div>
       <div class="val reveal">
         <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></span>
-        <h3>稳定同源</h3>
-        <p>Mac、iPhone、输入法键盘共用一套核心代码，附带单元测试与 CI 编译验证，长期放进工作流也放心。</p>
+        <h3>稳定可靠</h3>
+        <p>核心代码附带单元测试与 CI 编译验证，每次更新都会跑一遍，长期放进工作流也放心。</p>
       </div>
     </div>
   </div>
@@ -584,49 +565,6 @@
           <span class="svc"><i class="g"></i>通义千问 · 已配置</span>
           <span class="svc"><i class="g"></i>历史本地保留</span>
         </div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ===================== 全平台 ===================== -->
-<section id="platforms" class="soft">
-  <div class="wrap">
-    <div class="sec-head center reveal">
-      <span class="kicker">全平台</span>
-      <h2>一套核心，三个地方都能说。</h2>
-      <p>Mac、iPhone、输入法键盘共用同一套核心代码——同样的识别、同样的整理、同样的热词，行为完全一致。</p>
-    </div>
-    <div class="platforms">
-      <div class="plat reveal">
-        <span class="pic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg></span>
-        <h3>macOS <span class="badge live">可下载</span></h3>
-        <p>常驻菜单栏。在任意输入框按住快捷键说话，浮窗实时显示音量和进度，松手自动落字。</p>
-        <ul>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>全局快捷键，按住或轻点切换</li>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>本地历史 + 原始音频可回看</li>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Developer ID 签名 + 公证</li>
-        </ul>
-      </div>
-      <div class="plat reveal">
-        <span class="pic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="3"/><path d="M11 18h2"/></svg></span>
-        <h3>iPhone App <span class="badge soon">同源支持</span></h3>
-        <p>手机上的语音整理。长按说话，查看输入统计与历史，和 Mac 共享同一套配置与词库。</p>
-        <ul>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>长按 / 快按两种说话方式</li>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>输入统计与今日/本周字数</li>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>配置可从 Mac 一键导入</li>
-        </ul>
-      </div>
-      <div class="plat reveal">
-        <span class="pic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M8 14h8"/></svg></span>
-        <h3>输入法键盘 <span class="badge soon">同源支持</span></h3>
-        <p>系统级自定义键盘。在任何 App 里点一下麦克风就能说话，整理好的文字直接落到当前输入框。</p>
-        <ul>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>任意 App 内可用</li>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>波形与进度实时反馈</li>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>撤销 / 重做上一次输入</li>
-        </ul>
       </div>
     </div>
   </div>

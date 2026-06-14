@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Typefree — 隱私優先、更懂中文的 AI 語音輸入</title>
-<meta name="description" content="Typefree 是一個隱私優先的 AI 語音輸入工具。按住快捷鍵說話，自動識別、去掉口水詞、理順句子，把整理好的文字直接落到游標處。錄音、資料、API 憑證都在你自己手裡。免費版每天 1000 字，買斷版無限輸入。">
+<meta name="description" content="Typefree 是一個隱私優先的 AI 語音輸入工具。按住快捷鍵說話，自動識別、去掉口水詞、理順句子，把整理好的文字直接落到游標處。錄音、資料、API 憑證都在你自己手裡。新用戶 7 天免費試用（我們買單），之後每天 1500 字免費或一次買斷無限輸入。">
 <script>try{history.scrollRestoration='manual';}catch(e){}</script>
 <script>/* 按系統語言/記憶自動跳轉語言版本 */(function(){var P="zh-Hant";try{var s=localStorage.getItem("tf_lang");var w=s;if(!w){var n=(navigator.language||"").toLowerCase();w=n.indexOf("en")===0?"en":/hant|tw|hk|mo/.test(n)?"zh-Hant":"zh-Hans";}if(w!==P){var m={"zh-Hans":"index.html","zh-Hant":"index.zh-Hant.html","en":"index.en.html"};var t=m[w];var cur=location.pathname.split("/").pop()||"index.html";if(t&&t!==cur){location.replace(t);}}}catch(e){}})();</script>
 <style>
@@ -263,10 +263,12 @@
   .final-box .btn.ghost:hover{background:rgba(255,255,255,.08);}
 
   /* ===== 價格 ===== */
-  .pricing{display:grid;grid-template-columns:repeat(2,1fr);gap:18px;max-width:820px;margin:0 auto;}
+  .pricing{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;max-width:1080px;margin:0 auto;}
   .pcard{position:relative;padding:32px;border:1px solid var(--line);border-radius:var(--r);background:var(--card);display:flex;flex-direction:column;}
   .pcard.feat{border-color:var(--ink);box-shadow:var(--shadow-sm);}
   .pcard .ptag{align-self:flex-start;height:26px;padding:0 13px;border-radius:999px;background:var(--alt);color:var(--ink2);font-size:12.5px;font-weight:650;display:inline-flex;align-items:center;margin-bottom:18px;}
+  .pcard .ptags{display:flex;gap:7px;flex-wrap:wrap;align-self:flex-start;margin-bottom:18px;}
+  .pcard .ptags .ptag{margin-bottom:0;align-self:auto;}
   .pcard.feat .ptag{background:var(--ink);color:#fff;}
   .pcard .price{display:flex;align-items:baseline;gap:9px;flex-wrap:wrap;}
   .pcard .price .amt{font-size:42px;font-weight:800;letter-spacing:-.03em;}
@@ -660,33 +662,45 @@
   <div class="wrap">
     <div class="sec-head center reveal">
       <span class="kicker">價格</span>
-      <h2>免費夠用，要更多再買斷。</h2>
-      <p>下載即用，每天 1000 字免費。需要無限輸入，一次買斷、永久使用——不是訂閱。</p>
+      <h2>三種用法，按需選擇。</h2>
+      <p>新用戶 7 天免費試用，費用我們承擔；到期後填入自己的 Key 永久免費，或一次買斷解鎖無限輸入——都不是訂閱。</p>
     </div>
     <div class="pricing reveal">
       <div class="pcard">
-        <span class="ptag">免費版</span>
-        <div class="price"><span class="amt">¥0</span><span class="per">免費下載</span></div>
-        <p class="pdesc">適合日常體驗和輕量使用。</p>
+        <span class="ptag">新用戶</span>
+        <div class="price"><span class="amt">免費</span><span class="per">· 7 天試用</span></div>
+        <p class="pdesc">下載即用，零設定，新用戶專屬。</p>
         <ul>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>每天最多 1000 字輸入</li>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>完整識別 + AI 整理 + 術語糾正</li>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>多識別 / 潤色服務商自由切換</li>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>歷史記錄與本地儲存</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>每天 1,500 字輸入</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>識別 + AI 潤色，<b>費用由我們承擔</b></li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>不用填任何 Key，按一下就出字</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>7 天到期後可轉下面兩種繼續用</li>
         </ul>
         <a class="btn lg" href="https://github.com/kdsz001/typefree/releases/latest/download/Typefree.dmg">免費下載 Mac 版</a>
       </div>
       <div class="pcard feat">
-        <span class="ptag">買斷版</span>
+        <div class="ptags"><span class="ptag">買斷版</span><span class="ptag">自帶 Key</span></div>
         <div class="price"><span class="amt">$19</span><span class="was">$49</span><span class="off">限時 -61%</span><span class="per">一次性 · 永久</span></div>
-        <p class="pdesc">解鎖無限輸入，一次付費永久使用，不是訂閱。</p>
+        <p class="pdesc">解鎖每天無限輸入，一次付費永久使用，不是訂閱。</p>
         <ul>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg><b>無限輸入</b>，不再有每日字數限制</li>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>免費版的全部功能</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg><b>每天無限輸入</b>，不再有字數限制</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>同樣用你自己的 Key，零中轉</li>
           <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>一個啟用碼授權 1 臺 Mac</li>
           <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>30 天內不滿意可全額退款</li>
         </ul>
         <a class="btn primary lg tf-buy" href="#pricing">購買買斷版 · $19</a>
+      </div>
+      <div class="pcard">
+        <span class="ptag">永久免費</span>
+        <div class="price"><span class="amt">免費</span><span class="per">· 不限時間</span></div>
+        <p class="pdesc">填入你自己的 API Key，長期免費用。</p>
+        <ul>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>每天 1,500 字輸入</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>完整識別 + AI 整理 + 術語糾正</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>費用走你自己的 Key，我們不中轉、不計費</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>多識別 / 潤色服務商自由切換</li>
+        </ul>
+        <a class="btn lg" href="https://github.com/kdsz001/typefree/releases/latest/download/Typefree.dmg">免費下載 Mac 版</a>
       </div>
     </div>
     <p class="pnote">支援 微信 / 支付寶 / 銀行卡 等多種支付，由 Paddle 安全結算。<br>沒看到微信支付？在付款頁把「國家」選成中國即可。微信到帳確認可能需要 1~10 分鐘，啟用碼會自動寄到信箱，請勿重複付款。</p>
@@ -705,7 +719,7 @@
       <div class="scard reveal">
         <div class="sn">STEP 01</div>
         <h3>下載並安裝</h3>
-        <p>下載已簽名、已公證的 DMG，拖進"應用程式"即可。免費版每天可輸入 1000 字，先試用、滿意再買斷。</p>
+        <p>下載已簽名、已公證的 DMG，拖進"應用程式"即可。新用戶 7 天免費試用、零設定，到期後每天 1500 字免費或買斷無限。</p>
         <div class="links">
           <a href="https://github.com/kdsz001/typefree/releases/latest/download/Typefree.dmg"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>下載 Mac 版 DMG</a>
         </div>
@@ -743,7 +757,7 @@
       <details open class="reveal"><summary>和系統自帶的聽寫有什麼區別？<span class="plus"></span></summary><p>系統聽寫更像逐字轉錄，"嗯、那個"也會照打。Typefree 會在識別後整理語言——去口水詞、理順句子、規範數字標點，讓輸出可以直接傳送或當作 Prompt。</p></details>
       <details class="reveal"><summary>它是完全離線的嗎？<span class="plus"></span></summary><p>不是。當前主要路徑會呼叫你配置的雲端識別和大模型服務。它強調的是本地優先、不走我們自建的中轉——而不是"斷網也能用"。</p></details>
       <details class="reveal"><summary>支援哪些服務商和模型？<span class="plus"></span></summary><p>識別用火山引擎 BigASR；潤色支援通義千問、智譜 GLM、豆包，可隨時切換，也可以選擇"不潤色、直接輸出原文"。</p></details>
-      <details class="reveal"><summary>怎麼收費？可以先免費試用嗎？<span class="plus"></span></summary><p>可以。免費版每天能輸入 1000 字，足夠日常體驗；需要無限輸入再一次性買斷 $19，永久使用、不是訂閱。買斷後 30 天內不滿意可全額退款。</p></details>
+      <details class="reveal"><summary>怎麼收費？可以先免費試用嗎？<span class="plus"></span></summary><p>可以。新用戶有 7 天免費試用，零設定、費用我們承擔，每天 1500 字；到期後填入你自己的 Key 仍可每天 1500 字永久免費；需要每天無限輸入再一次性買斷 $19，永久使用、不是訂閱。買斷後 30 天內不滿意可全額退款。</p></details>
       <details class="reveal"><summary>不太會配 API 的人能用嗎？<span class="plus"></span></summary><p>目前更適合願意配置服務商憑證的使用者。引導裡有申請入口和填寫說明（5 分鐘圖文教程）；如果你只想先看看效果，可以直接看這頁的演示。</p></details>
       <details class="reveal"><summary>我的錄音和資料安全嗎？<span class="plus"></span></summary><p>錄音、歷史和 API 憑證預設存在你自己的裝置上（macOS 在 <code>~/.config/voicepolish/</code>）。請求只發往你配置的服務商，不經過我們。歷史保留時長也可以自己設。</p></details>
     </div>
@@ -792,8 +806,15 @@
   },{threshold:.12,rootMargin:'0px 0px -8% 0px'});
   document.querySelectorAll('.reveal').forEach(el=>io.observe(el));
 
-  window.scrollTo(0,0);
-  window.addEventListener('load',()=>window.scrollTo(0,0));
+  // 錨點跳轉修復：URL 帶 #pricing 等錨點時，等資源載入完精確定位到目標；沒有錨點才強制回頂部
+  if(location.hash.length>1){
+    var jumpToHash=function(){try{var el=document.querySelector(location.hash);if(el)el.scrollIntoView({behavior:'auto'});}catch(e){}};
+    jumpToHash();
+    window.addEventListener('load',jumpToHash);
+  }else{
+    window.scrollTo(0,0);
+    window.addEventListener('load',()=>window.scrollTo(0,0));
+  }
 
   // 語言切換器：標記當前 + 記住選擇
   (function(){var P="zh-Hant";var sw=document.getElementById('langsw');if(!sw)return;

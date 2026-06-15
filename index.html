@@ -667,7 +667,7 @@
         <div class="price"><span class="amt">免费</span><span class="per">· 7 天试用</span></div>
         <p class="pdesc">下载即用，零配置，新用户专享。</p>
         <ul>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>每天 1,500 字输入</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>7 天共 8000 字输入</li>
           <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>识别 + AI 润色，<b>费用由我们承担</b></li>
           <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>不用填任何 Key，按一下就出字</li>
           <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>7 天到期后可转下面两种继续用</li>
@@ -676,7 +676,7 @@
       </div>
       <div class="pcard feat">
         <div class="ptags"><span class="ptag">买断版</span><span class="ptag">自带 Key</span></div>
-        <div class="price"><span class="amt">$19</span><span class="was">$49</span><span class="off">限时 -61%</span><span class="per">一次性 · 永久</span></div>
+        <div class="price"><span class="amt">$29</span><span class="was">$69</span><span class="off">限时 -58%</span><span class="per">一次性 · 永久</span></div>
         <p class="pdesc">解锁每天无限输入，一次付费永久使用，不是订阅。</p>
         <ul>
           <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg><b>每天无限输入</b>，不再有字数限制</li>
@@ -684,7 +684,7 @@
           <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>一个激活码授权 1 台 Mac</li>
           <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>30 天内不满意可全额退款</li>
         </ul>
-        <a class="btn primary lg tf-buy" href="#pricing">购买买断版 · $19</a>
+        <a class="btn primary lg tf-buy" href="#pricing">购买买断版 · $29</a>
       </div>
       <div class="pcard">
         <span class="ptag">永久免费</span>
@@ -753,7 +753,7 @@
       <details open class="reveal"><summary>和系统自带的听写有什么区别？<span class="plus"></span></summary><p>系统听写更像逐字转录，"嗯、那个"也会照打。Typefree 会在识别后整理语言——去口水词、理顺句子、规范数字标点，让输出可以直接发送或当作 Prompt。</p></details>
       <details class="reveal"><summary>它是完全离线的吗？<span class="plus"></span></summary><p>不是。当前主要路径会调用你配置的云端识别和大模型服务。它强调的是本地优先、不走我们自建的中转——而不是"断网也能用"。</p></details>
       <details class="reveal"><summary>支持哪些服务商和模型？<span class="plus"></span></summary><p>识别用火山引擎 BigASR；润色支持通义千问、智谱 GLM、豆包，可随时切换，也可以选择"不润色、直接输出原文"。</p></details>
-      <details class="reveal"><summary>怎么收费？可以先免费试用吗？<span class="plus"></span></summary><p>可以。新用户有 7 天免费试用，零配置、费用我们承担，每天 1500 字；到期后填入你自己的 Key 仍可每天 1500 字永久免费；需要每天无限输入再一次性买断 $19，永久使用、不是订阅。买断后 30 天内不满意可全额退款。</p></details>
+      <details class="reveal"><summary>怎么收费？可以先免费试用吗？<span class="plus"></span></summary><p>可以。新用户有 7 天免费试用，零配置、费用我们承担，7 天内共 8000 字（每天最多 5000）；到期后填入你自己的 Key 仍可每天 1500 字永久免费；需要每天无限输入再一次性买断 $29，永久使用、不是订阅。买断后 30 天内不满意可全额退款。</p></details>
       <details class="reveal"><summary>不太会配 API 的人能用吗？<span class="plus"></span></summary><p>目前更适合愿意配置服务商凭证的用户。引导里有申请入口和填写说明（5 分钟图文教程）；如果你只想先看看效果，可以直接看这页的演示。</p></details>
       <details class="reveal"><summary>我的录音和数据安全吗？<span class="plus"></span></summary><p>录音、历史和 API 凭证默认存在你自己的设备上（macOS 在 <code>~/.config/voicepolish/</code>）。请求只发往你配置的服务商，不经过我们。历史保留时长也可以自己设。</p></details>
     </div>
@@ -831,8 +831,7 @@
         // 挂梯子用户看不到微信支付的问题改由 pnote 文案引导（付款页把「国家」选成中国）。
         Paddle.Checkout.open({
           settings: { successUrl: "https://typefree.app/thanks.html" },
-          items:[{ priceId:"pri_01ktpracbxxhfm2n9dvfs0rd70", quantity:1 }],
-          discountId:"dsc_01ktprr2bfbxj2qt5ay291b4n2" });
+          items:[{ priceId:"pri_01ktpracbxxhfm2n9dvfs0rd70", quantity:1 }] });
       });
     });
   }catch(err){ console.error("Paddle init failed", err); }

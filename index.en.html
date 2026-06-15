@@ -667,7 +667,7 @@ Overall, the layout doesn't feel great.</div>
         <div class="price"><span class="amt">Free</span><span class="per">· 7-day trial</span></div>
         <p class="pdesc">Download and go — zero setup, for new users.</p>
         <ul>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>1,500 characters of input per day</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>8,000 characters total over 7 days</li>
           <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Recognition + AI clean-up, <b>on us</b></li>
           <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>No API key needed — just press and speak</li>
           <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>After 7 days, switch to either option below</li>
@@ -676,7 +676,7 @@ Overall, the layout doesn't feel great.</div>
       </div>
       <div class="pcard feat">
         <div class="ptags"><span class="ptag">Lifetime</span><span class="ptag">Your own key</span></div>
-        <div class="price"><span class="amt">$19</span><span class="was">$49</span><span class="off">61% OFF</span><span class="per">one-time · forever</span></div>
+        <div class="price"><span class="amt">$29</span><span class="was">$69</span><span class="off">58% OFF</span><span class="per">one-time · forever</span></div>
         <p class="pdesc">Unlock unlimited daily input. Pay once, use forever — not a subscription.</p>
         <ul>
           <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg><b>Unlimited daily input</b>, no character cap</li>
@@ -684,7 +684,7 @@ Overall, the layout doesn't feel great.</div>
           <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>One license key activates 1 Mac</li>
           <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Full refund within 30 days if unsatisfied</li>
         </ul>
-        <a class="btn primary lg tf-buy" href="#pricing">Buy Lifetime · $19</a>
+        <a class="btn primary lg tf-buy" href="#pricing">Buy Lifetime · $29</a>
       </div>
       <div class="pcard">
         <span class="ptag">Free forever</span>
@@ -753,7 +753,7 @@ Overall, the layout doesn't feel great.</div>
       <details open class="reveal"><summary>How is this different from the system dictation?<span class="plus"></span></summary><p>System dictation is closer to word-for-word transcription — it types out every &ldquo;um&rdquo; and &ldquo;you know.&rdquo; Typefree cleans the language after recognition — removing fillers, smoothing sentences, normalizing numbers and punctuation — so the output is ready to send or use as a prompt.</p></details>
       <details class="reveal"><summary>Is it fully offline?<span class="plus"></span></summary><p>No. The main path calls the cloud recognition and LLM services you configured. The emphasis is local-first and never routing through a server of ours — not &ldquo;works without internet.&rdquo;</p></details>
       <details class="reveal"><summary>Which providers and models are supported?<span class="plus"></span></summary><p>Recognition uses Volcengine BigASR; clean-up supports Qwen, Zhipu GLM and Doubao, switchable anytime — or you can choose &ldquo;no polish, output raw text.&rdquo;</p></details>
-      <details class="reveal"><summary>How does pricing work? Can I try it free first?<span class="plus"></span></summary><p>Yes. New users get a free 7-day trial — zero setup, on us, 1,500 characters a day; after that, add your own key and keep 1,500 characters a day for free, forever; for unlimited daily input, buy once for $19 — forever, not a subscription. Full refund within 30 days if you're not satisfied.</p></details>
+      <details class="reveal"><summary>How does pricing work? Can I try it free first?<span class="plus"></span></summary><p>Yes. New users get a free 7-day trial — zero setup, on us, 8,000 characters total over 7 days (up to 5,000/day); after that, add your own key and keep 1,500 characters a day for free, forever; for unlimited daily input, buy once for $29 — forever, not a subscription. Full refund within 30 days if you're not satisfied.</p></details>
       <details class="reveal"><summary>Can people who aren't great with APIs use it?<span class="plus"></span></summary><p>Right now it suits users willing to set up provider credentials. The guide has sign-up links and instructions (a 5-minute walkthrough); if you just want to see results, check the demo on this page.</p></details>
       <details class="reveal"><summary>Are my recordings and data safe?<span class="plus"></span></summary><p>Recordings, history and API credentials are stored on your own device by default (on macOS, <code>~/.config/voicepolish/</code>). Requests only go to the providers you configured, never through us. You set how long history is kept.</p></details>
     </div>
@@ -830,8 +830,7 @@ Overall, the layout doesn't feel great.</div>
         // (unknown before checkout); address-only throws and the checkout never opens (verified 2026-06-11).
         Paddle.Checkout.open({
           settings: { successUrl: "https://typefree.app/thanks.en.html" },
-          items:[{ priceId:"pri_01ktpracbxxhfm2n9dvfs0rd70", quantity:1 }],
-          discountId:"dsc_01ktprr2bfbxj2qt5ay291b4n2" });
+          items:[{ priceId:"pri_01ktpracbxxhfm2n9dvfs0rd70", quantity:1 }] });
       });
     });
   }catch(err){ console.error("Paddle init failed", err); }

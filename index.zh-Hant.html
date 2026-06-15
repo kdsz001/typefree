@@ -281,7 +281,12 @@
   .pcard li b{color:var(--ink);font-weight:650;}
   .pcard li svg{width:17px;height:17px;color:var(--ok);flex:none;margin-top:2px;}
   .pcard .btn{width:100%;}
-  .pnote{text-align:center;color:var(--ink3);font-size:13.5px;margin-top:24px;}
+  .pay-cn{max-width:560px;margin:26px auto 0;display:flex;gap:12px;align-items:flex-start;
+    padding:15px 18px;border:1px solid var(--ok);border-radius:13px;background:var(--ok-soft);
+    color:var(--ink2);font-size:14.5px;line-height:1.55;text-align:left;}
+  .pay-cn .flag{font-size:20px;line-height:1.45;flex:none;}
+  .pay-cn b{display:block;margin-bottom:2px;color:var(--ink);font-weight:700;}
+  .pnote{text-align:center;color:var(--ink3);font-size:13.5px;margin-top:12px;}
 
   /* ===== Footer ===== */
   footer{padding:40px 0;border-top:1px solid var(--line2);color:var(--ink3);font-size:14px;}
@@ -699,7 +704,11 @@
         <a class="btn lg" href="https://github.com/kdsz001/typefree/releases/latest/download/Typefree.dmg">免費下載 Mac 版</a>
       </div>
     </div>
-    <p class="pnote">支援 微信 / 支付寶 / 銀行卡 等多種支付，由 Paddle 安全結算。<br>沒看到微信支付？在付款頁把「國家」選成中國即可。微信到帳確認可能需要 1~10 分鐘，啟用碼會自動寄到信箱，請勿重複付款。</p>
+    <div class="pay-cn">
+      <span class="flag">🇨🇳</span>
+      <div><b>想用微信 / 支付寶付款？</b>付款頁沒看到的話，把「國家 / 地區」改成「中國」，微信、支付寶就會出現。</div>
+    </div>
+    <p class="pnote">支援 微信 / 支付寶 / 銀行卡 等多種支付，由 Paddle 安全結算。到帳約 1~10 分鐘，啟用碼會自動寄到信箱，請勿重複付款。</p>
   </div>
 </section>
 

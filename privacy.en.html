@@ -52,10 +52,10 @@
 
 <main><div class="wrap">
   <h1>Privacy Policy</h1>
-  <p class="updated">Last updated: June 10, 2026</p>
+  <p class="updated">Last updated: June 24, 2026</p>
 
   <h2>In one sentence</h2>
-  <p>Typefree <strong>runs locally on your own device</strong>. Your recordings, transcribed text, history and API credentials are <strong>stored on your device by default</strong> — we operate no servers that store this content, and we do not collect it.</p>
+  <p>Typefree <strong>runs locally on your own device</strong>. Your recordings, transcribed text, history and API credentials are <strong>stored on your device by default</strong> — we operate no servers that store this content, and we do not collect it. (During the free 7-day trial for new users, a small amount of necessary information is collected — see <strong>"Data handling during the free 7-day trial"</strong> below.)</p>
 
   <h2>Who we are</h2>
   <p>Typefree is a voice-input tool built by Rui Wang, an independent developer. For privacy questions, contact <a href="mailto:ray@typefree.app">ray@typefree.app</a>.</p>
@@ -63,8 +63,16 @@
   <h2>How your voice and text are handled</h2>
   <ul>
     <li><strong>Recording is local</strong>: audio is captured on your device while you hold the shortcut, and only enters processing after you release it.</li>
-    <li><strong>Recognition and clean-up run through third-party providers you configure yourself</strong>: speech recognition and AI clean-up use <strong>your own</strong> third-party services (e.g. Volcengine, Alibaba Cloud Bailian) with <strong>your own API key</strong>. Requests are sent <strong>directly from your device to those providers — they do not pass through Typefree's servers</strong>. That content is governed by each provider's own privacy policy, which we recommend you review.</li>
+    <li><strong>Recognition and clean-up run through third-party providers</strong>: speech recognition and AI clean-up are handled by third-party services (e.g. Volcengine, Alibaba Cloud Bailian). <strong>Once you enter your own API key</strong>, requests are sent <strong>directly from your device to those providers — they do not pass through Typefree's servers</strong>; <strong>the free 7-day trial for new users works differently, see the dedicated section below</strong>. That content is governed by each provider's own privacy policy, which we recommend you review.</li>
     <li><strong>History and credentials stay local</strong>: recognition history, optional original audio, and API credentials are stored in a local folder on your device (on macOS, <code>~/.config/voicepolish/</code>). Whether and how long to keep them is up to you.</li>
+  </ul>
+
+  <h2>Data handling during the free 7-day trial</h2>
+  <p>So that new users can try Typefree with zero setup, <strong>during the free 7-day trial for new users</strong>, speech-recognition and AI clean-up requests are forwarded to the third-party providers above <strong>through a relay server we operate</strong>, with the cost covered by us. In this mode:</p>
+  <ul>
+    <li>We record only the <strong>minimum information</strong> needed to prevent abuse: a randomly generated device identifier (which does not contain your real identity), IP address, the character count and timestamp of each request, and your app and OS version — used for quota accounting and abuse prevention, and retained only as long as needed for those purposes.</li>
+    <li>We <strong>do not store, read, or analyze your recordings, recognized text, or cleaned-up text</strong> — that content is only relayed in real time and discarded once processed.</li>
+    <li>After the trial, once you enter your own API key, requests revert to going <strong>directly to the providers, not through us</strong>.</li>
   </ul>
 
   <h2>Purchase and activation</h2>

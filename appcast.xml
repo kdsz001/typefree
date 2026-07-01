@@ -125,5 +125,13 @@
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
             <enclosure url="https://github.com/kdsz001/typefree/releases/download/v2.5.0/Typefree-2.5.0.dmg" sparkle:edSignature="5c5Ck0L6TgC6vM0ETr3YvRIwLfuvBQ5lFqGOZiMv1dOApoINyJLb/MW1VdJV8otLLIUB4VzFjZeZThCeE9iOCA==" length="2132540" type="application/octet-stream"/>
         </item>
+        <item>
+            <title>2.5.1</title>
+            <sparkle:version>2.5.1</sparkle:version>
+            <sparkle:shortVersionString>2.5.1</sparkle:shortVersionString>
+            <pubDate>Wed, 01 Jul 2026 02:53:43 +0000</pubDate>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+            <enclosure url="https://github.com/kdsz001/typefree/releases/download/v2.5.1/Typefree-2.5.1.dmg" sparkle:edSignature="nSxJS1Ib+y9T3sTf40m8yn9BXw0P2KU0BUYeV37/Tc/PFiIsyJQKvQuXmEH/PzQrN6ZnAtwMefk4EfTGscmOCg==" length="2134066" type="application/octet-stream"/>
+        </item>
     </channel>
 </rss>

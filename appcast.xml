@@ -157,5 +157,13 @@
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
             <enclosure url="https://github.com/kdsz001/typefree/releases/download/v2.7.1/Typefree-2.7.1.dmg" sparkle:edSignature="ZTNjuD5wBCz/+xvni8wrjz/1CAYxGcafKiQuFNqygW0lNkq71r6SP6/y4FI2q2c/KgLj/TX21HOzCUZ4c5cuCg==" length="2287136" type="application/octet-stream"/>
         </item>
+        <item>
+            <title>2.7.2</title>
+            <sparkle:version>2.7.2</sparkle:version>
+            <sparkle:shortVersionString>2.7.2</sparkle:shortVersionString>
+            <pubDate>Mon, 13 Jul 2026 07:28:34 +0000</pubDate>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+            <enclosure url="https://github.com/kdsz001/typefree/releases/download/v2.7.2/Typefree-2.7.2.dmg" sparkle:edSignature="iw7ofprt8h4dA0MiKLyAf7HiRqEyHdXl6++lcYOT1LZ3MCivC7B/6RVyUBQIsqyqzvzHakMal4dshBeQqjLWAg==" length="2291093" type="application/octet-stream"/>
+        </item>
     </channel>
 </rss>

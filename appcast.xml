@@ -171,6 +171,7 @@
             <sparkle:shortVersionString>2.8.0</sparkle:shortVersionString>
             <pubDate>Fri, 07 Aug 2026 02:16:53 +0000</pubDate>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+            <description><![CDATA[<h3>免费额度改成按周算</h3><p>以前是每天 1500 字，一天写多点就被卡住。现在改成<strong>每周 1 万字</strong>，周一 0 点重置——一周内想集中在某天用完也没问题，不再被"今天用超了"打断。</p><p><strong>同时修了一个额度的老毛病</strong>：之前有朋友反馈"感觉没用到 1500 字就提示额度用完"，确实是我们的问题——7 天试用期间用掉的字数，被错误地算进了后面自带 Key 的免费额度里。这版已修好，两者分开计算，不再互相占用。</p><h3>语音优化模型全面升级</h3><p>接入通义千问最新的几个模型（3.8-max、3.7-max、3.7-flash），整理效果更干净准确。</p><p>更省心的是新增了<strong>「自动选择」</strong>：</p><ul><li><strong>自动 · 质量优先</strong>（推荐）——自动用当前效果最好的模型</li><li><strong>自动 · 速度优先</strong>——追求快的选这个，说长段话时出字明显更快</li></ul><p>选了自动之后就不用管：某个模型的免费额度用完，App 会自动换下一个，全程无感，还能看到当前在用哪个模型。每个模型各送 100 万 Token 免费额度。</p><p>万一某个模型不可用（额度用完或未开通），设置页会直接标红提示你。</p><h3>修复</h3><ul><li><strong>历史记录「重试」卡死</strong>：超过 10 秒的录音点重试后会一直转圈、永远不出结果。已修复。</li><li>重试时点击不再有卡顿感（音频解码移出主线程，先出转圈再处理）。</li></ul><h3>其他</h3><ul><li>模型设置页新增推荐搭配提示：识别用「火山引擎（豆包）」＋ 优化用「千问 · 自动选择」，不知道怎么选照着来即可</li><li>模型选择改为下拉框，样式与页面统一</li><li>试用期的语音优化也升级到了效果最好的模型</li></ul><p>小提示：想让"额度用完自动切换"完全生效，记得去<a href="https://bailian.console.aliyun.com/">百炼控制台</a>把「免费额度用完即停」的开关打开。</p>]]></description>
             <enclosure url="https://github.com/kdsz001/typefree/releases/download/v2.8.0/Typefree-2.8.0.dmg" sparkle:edSignature="jGtafuC4RaAmWd0bet8mdZh/auusYiTXEFlFIsg+m3pxbdfZyM3GcXWmvl5UVMsu4BJMGtjHPdIg7o4Qy44wCg==" length="2311761" type="application/octet-stream"/>
         </item>
     </channel>

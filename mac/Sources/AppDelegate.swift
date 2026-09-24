@@ -1365,6 +1365,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, SettingsWindowDelegate, SPUU
     private var supportPollTimer: Timer?
     private var pendingPolishWarning: String?  // 润色失败原因（额度用尽等），在文字投递后提醒一次
     private var pendingOverlayHide: DispatchWorkItem?  // 防止上一次错误的延时隐藏误杀新录音浮窗
+    /// 松手那一刻的前台 App：识别/润色期间用户切走了，就不往新的前台 App 里粘贴
+    private var deliveryTargetPID: pid_t?
     private var cancelledSamples: [Float]?  // 误点叉号的录音暂存（撤销窗口期内可重新识别）
     /// 暂存的这段是不是「问 AI」的录音：撤销时要重新去问 AI，而不是当普通文字打出来
     private var cancelledWasAsk = false
@@ -1744,6 +1746,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SettingsWindowDelegate, SPUU
         mouseHoldToTalkManager?.recordingDidLeaveActiveState()
         isProcessing = true
         statusBar.setTitle("VP⏳")
+        deliveryTargetPID = NSWorkspace.shared.frontmostApplication?.processIdentifier
         let mode = processingMode
 
         // 收起流式取样定时器，取出本次会话（可能为 nil：omni / 开关关）。
@@ -2146,6 +2149,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SettingsWindowDelegate, SPUU
             askAI(with: samples, followUp: false, speechUnconfirmed: false)
         } else {
             _ = beginProcessing(samples: samples)
+            deliveryTargetPID = NSWorkspace.shared.frontmostApplication?.processIdentifier
             pipeline.process(samples: samples, mode: processingMode)
         }
     }
@@ -2231,6 +2235,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, SettingsWindowDelegate, SPUU
             return text + "\n(已复制到剪贴板；授予辅助功能权限后可自动粘贴)"
         case .pastedKeptClipboard:
             return text
+        case .copiedOnlyAppSwitched:
+            return text + "\n(窗口已切换，已复制到剪贴板)"
         }
     }
 
@@ -2796,11 +2802,22 @@ class AppDelegate: NSObject, NSApplicationDelegate, SettingsWindowDelegate, SPUU
                 self.overlayWindow.completeProgressOnly {
                     self.overlayWindow.hide()
                 }
-                let result = self.textDelivery.deliver(text: deliveredText, onNotLanded: { [weak self] in
-                    // 工单 #1016 第二轮：网页正文上说完话，粘完核实焦点没进输入框 → 文字多半没粘上，剪贴板留着
-                    self?.debugLog("TextDelivery: 网页里多半没粘上，提示用户 ⌘V")
-                    self?.queueHint("文字可能没粘上 · 已复制，按 ⌘V 粘贴", urgent: true)
-                })
+                let targetPID = self.deliveryTargetPID
+                self.deliveryTargetPID = nil
+                let result: TextDelivery.DeliveryResult
+                if let targetPID, let nowPID = NSWorkspace.shared.frontmostApplication?.processIdentifier,
+                   nowPID != targetPID {
+                    // 处理期间切走了：粘进新窗口可能发错人，只放剪贴板让用户自己决定
+                    self.debugLog("TextDelivery: frontmost app changed (\(targetPID) → \(nowPID)), copy only")
+                    self.textDelivery.copyOnly(text: deliveredText)
+                    result = .copiedOnlyAppSwitched
+                } else {
+                    result = self.textDelivery.deliver(text: deliveredText, onNotLanded: { [weak self] in
+                        // 工单 #1016 第二轮：网页正文上说完话，粘完核实焦点没进输入框 → 文字多半没粘上，剪贴板留着
+                        self?.debugLog("TextDelivery: 网页里多半没粘上，提示用户 ⌘V")
+                        self?.queueHint("文字可能没粘上 · 已复制，按 ⌘V 粘贴", urgent: true)
+                    })
+                }
                 if let hint = self.pendingOutputLanguageHint {
                     self.pendingOutputLanguageHint = nil
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) { [weak self] in
@@ -2818,6 +2835,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, SettingsWindowDelegate, SPUU
                     self.debugLog("TextDelivery: deliver returned pastedKeptClipboard（焦点不在输入框）")
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) { [weak self] in
                         self?.queueHint("刚才的位置不能输入文字 · 已复制，按 ⌘V 粘贴", urgent: true)
+                    }
+                case .copiedOnlyAppSwitched:
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) { [weak self] in
+                        self?.queueHint("窗口已切换 · 已复制，按 ⌘V 粘贴", urgent: true)
                     }
                 }
                 // quotaCharCount 只剩统计用途（每周字数限制已在 2026-09-14 取消）：仍按「未赞助 + 自带 Key」口径记，

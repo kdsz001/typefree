@@ -50,4 +50,13 @@ final class TermCorrectionTests: XCTestCase {
         XCTAssertEqual(apply([], "原样"), "原样")
         XCTAssertEqual(apply([("热词", [])], "热磁"), "热磁")
     }
+
+    // 中文误写不能把别的词拦腰改掉
+    func testChineseVariantDoesNotSplitAnotherWord() {
+        let rules = [("徐相", ["徐向"])]
+        XCTAssertEqual(apply(rules, "我跟徐向说了"), "我跟徐相说了")
+        XCTAssertEqual(apply(rules, "徐向前是元帅"), "徐向前是元帅")
+        XCTAssertEqual(apply([("豆包", ["斗包"])], "明天找斗包聊聊"), "明天找豆包聊聊")
+        XCTAssertEqual(apply([("北大", ["北京大"])], "今天去北京大学开会"), "今天去北京大学开会")
+    }
 }

@@ -1,4 +1,5 @@
 import Foundation
+import NaturalLanguage
 
 public class AIPolisher {
     public enum HistoryRetention: String, CaseIterable {
@@ -136,7 +137,8 @@ public class AIPolisher {
 
     /// 按词库把误写换成正写（2026-09-11 重写，旧版逐条整段替换会改坏正确的字）：
     /// - 已经是正写的地方不动：误写恰好是正写的一部分时（误写 APIK、正写 APIKey），原文里的 APIKey 不能变成 APIKeyey；
-    /// - 英文/数字的误写要整词命中，前后不能紧挨英文字母或数字（SQL 不改 PostgreSQL 的尾巴）；中文没有词边界，照旧；
+    /// - 英文/数字的误写要整词命中，前后不能紧挨英文字母或数字（SQL 不改 PostgreSQL 的尾巴）；
+    /// - 中文误写若会把分词器切出的词拦腰截断（误写「徐向」遇到「徐向前」→ 徐/向前），不改；
     /// - 单遍替换：所有命中都在原文上找，长的误写优先、互不重叠，换进去的正写不会再被别的规则改一遍。
     static func applyTermCorrections(_ corrections: [TermCorrection], to text: String) -> String {
         let pairs = corrections
@@ -146,6 +148,7 @@ public class AIPolisher {
         guard !pairs.isEmpty, !text.isEmpty else { return text }
 
         let source = text as NSString
+        lazy var cjkWordRanges = chineseWordRanges(in: text)
         var accepted: [(range: NSRange, target: String)] = []
         for pair in pairs {
             // 只差大小写的规则（chatgpt → ChatGPT）只改写法不对的地方；其余规则避开原文里已是正写的位置
@@ -153,6 +156,7 @@ public class AIPolisher {
             let correctSpots = caseOnly ? [] : occurrences(of: pair.target, in: source)
             for range in occurrences(of: pair.variant, in: source) {
                 guard isWholeLatinWord(range, variant: pair.variant, in: source) else { continue }
+                if containsCJK(pair.variant), splitsWord(range, wordRanges: cjkWordRanges) { continue }
                 if caseOnly, source.substring(with: range) == pair.target { continue }
                 if correctSpots.contains(where: { NSIntersectionRange($0, range).length > 0 }) { continue }
                 if accepted.contains(where: { NSIntersectionRange($0.range, range).length > 0 }) { continue }
@@ -181,6 +185,31 @@ public class AIPolisher {
             location = found.location + found.length
         }
         return ranges
+    }
+
+    private static func containsCJK(_ s: String) -> Bool {
+        s.unicodeScalars.contains { (0x4E00...0x9FFF).contains($0.value) || (0x3400...0x4DBF).contains($0.value) }
+    }
+
+    /// 分词器切出的多字词（NSRange）。只用来判断命中有没有把某个词切断。
+    private static func chineseWordRanges(in text: String) -> [NSRange] {
+        let tokenizer = NLTokenizer(unit: .word)
+        tokenizer.string = text
+        var ranges: [NSRange] = []
+        tokenizer.enumerateTokens(in: text.startIndex..<text.endIndex) { tokenRange, _ in
+            let r = NSRange(tokenRange, in: text)
+            if r.length > 1 { ranges.append(r) }
+            return true
+        }
+        return ranges
+    }
+
+    /// 命中和某个多字词部分重叠（词的一部分在命中外面）→ 替换会把这个词改坏
+    private static func splitsWord(_ range: NSRange, wordRanges: [NSRange]) -> Bool {
+        wordRanges.contains { word in
+            let overlap = NSIntersectionRange(word, range).length
+            return overlap > 0 && overlap < word.length
+        }
     }
 
     /// 以英文字母/数字开头（结尾）的误写，前（后）一个字符不能也是英文字母/数字，否则是命中了长单词的一部分

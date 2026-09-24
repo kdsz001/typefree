@@ -2074,7 +2074,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SettingsWindowDelegate, SPUU
         audioRecorder.stopRecording { _ in }
     }
 
-    private func cancelRecording() {
+    private func cancelRecording(silently: Bool = false) {
         debugLog("CANCEL recording called, isRecording=\(isRecording), isProcessing=\(isProcessing)")
         // 长按问 AI 还没判出开口（用户什么都还没看到，也可能只是误触）：静悄悄丢掉，不冒「已取消 · 撤销」
         if isRecording, voiceQuestionMode, askAwaitingSpeech {
@@ -2116,6 +2116,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SettingsWindowDelegate, SPUU
             guard let self = self else { return }
             DispatchQueue.main.async {
                 guard let samples = samples, !samples.isEmpty else { return }   // 太短没采到内容：静默作罢
+                if silently { return }   // 组合键误触：不给「撤销」
                 // 面板续聊取消：不给「撤销」（撤销走的是润色粘贴，不是提问），面板底栏轻提示一下
                 if wasFollowUp { self.answerPanel.setListening(.cancelled); return }
                 self.cancelledSamples = samples
@@ -2447,6 +2448,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SettingsWindowDelegate, SPUU
         // 键盘触发的胶囊不再按单击/长按切换大小，这里不用改按钮
         hotkeyManager.onGestureClassified = { _ in }
         hotkeyManager.onCancel = { [weak self] in self?.cancelRecording() }
+        hotkeyManager.onDiscard = { [weak self] in self?.cancelRecording(silently: true) }
         ensureMouseHoldToTalkManager()
     }
 

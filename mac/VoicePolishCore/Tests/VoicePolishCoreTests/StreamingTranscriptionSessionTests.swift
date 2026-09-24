@@ -159,4 +159,33 @@ final class StreamingTranscriptionSessionTests: XCTestCase {
         releaseCommit?()  // 放行在途段 → 触发收尾
         wait(for: [finished], timeout: 3)
     }
+
+    // MARK: - 尾巴失败：不能静默丢句尾
+
+    private func finishResult(tail: Result<String, Error>) -> Result<String, Error>? {
+        let session = StreamingTranscriptionSession(chunkTranscriber: { _, done in
+            DispatchQueue.global().async { done(.success("C")) }
+        }, tailTranscriber: { _, done in
+            DispatchQueue.global().async { done(tail) }
+        })
+        let snapshot = speechWithPauses(blocks: 6)
+        drainCommits(session, snapshot)
+        XCTAssertGreaterThan(session.committedIndexForTest, 0, "前提：已有提交段")
+        let exp = expectation(description: "finish")
+        var out: Result<String, Error>?
+        session.finish(finalSamples: snapshot) { out = $0; exp.fulfill() }
+        wait(for: [exp], timeout: 3)
+        return out
+    }
+
+    func testTailFailureReportsErrorInsteadOfDroppingTail() {
+        let result = finishResult(tail: .failure(CloudASRTranscriber.TranscriptionError.timeout))
+        guard case .failure = result else { return XCTFail("尾巴识别失败应上报错误，让上层整段重识别") }
+    }
+
+    func testTailNoSpeechKeepsCommittedText() {
+        let result = finishResult(tail: .failure(CloudASRTranscriber.TranscriptionError.noSpeech))
+        guard case .success(let text) = result else { return XCTFail("尾巴无语音应返回已提交文字") }
+        XCTAssertFalse(text.isEmpty)
+    }
 }

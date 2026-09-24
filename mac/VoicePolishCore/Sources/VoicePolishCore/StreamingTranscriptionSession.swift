@@ -132,12 +132,13 @@ public final class StreamingTranscriptionSession {
                 case .success(let tailText):
                     completion(.success(Self.join(committed + [tailText])))
                 case .failure(let error):
-                    // 尾巴失败：若前面有已识别文字，别浪费，连同错误交给上层决定；
-                    // 这里保持简单——有已提交内容则返回它们（附带尾巴缺失），否则如实报错。
-                    if committed.isEmpty {
-                        completion(.failure(error))
-                    } else {
+                    // 尾巴判定为无语音（松手前的静音）→ 已提交内容就是全文。
+                    // 其它失败绝不能只返回已提交部分——那会静默吞掉句尾；
+                    // 如实报错，上层会退回整段重识别（AppDelegate.stopRecordingAndProcess）。
+                    if case CloudASRTranscriber.TranscriptionError.noSpeech = error, !committed.isEmpty {
                         completion(.success(Self.join(committed)))
+                    } else {
+                        completion(.failure(error))
                     }
                 }
             }

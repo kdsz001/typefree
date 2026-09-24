@@ -74,4 +74,13 @@ final class PolishModelRouterTests: XCTestCase {
                                                    defaults: defaults).contains("qwen3.8-max"),
                       "冷却到期后应回到候选队列")
     }
+
+    func testClassify403QuotaVersusUnavailable() {
+        let quota = AIPolisher.classify403(json: ["error": ["code": "AllocationQuota.FreeTierOnly", "message": "The free tier of the model has been exhausted."]], message: "x")
+        guard case .quotaExhausted = quota else { return XCTFail("免费额度用完应归为额度类") }
+        let denied = AIPolisher.classify403(json: ["error": ["code": "Model.AccessDenied", "message": "Model access denied."]], message: "x")
+        guard case .modelUnavailable = denied else { return XCTFail("无权限不应说成额度用完") }
+        XCTAssertEqual(PolishModelRouter.cooldown(for: .modelUnavailable("x")), PolishModelRouter.unavailableCooldown)
+        XCTAssertNil(PolishModelRouter.cooldown(for: .apiError("x")))
+    }
 }

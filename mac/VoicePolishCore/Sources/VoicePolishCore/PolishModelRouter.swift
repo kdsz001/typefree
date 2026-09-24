@@ -30,7 +30,18 @@ public enum PolishModelRouter {
     public static let lastResort = "qwen3.7-flash"
 
     /// 额度标记冷却 20 小时：免费额度当天不会恢复，次日自动重试一次也只花一个极快的 403。
-    static let cooldown: TimeInterval = 20 * 3600
+    public static let cooldown: TimeInterval = 20 * 3600
+    /// 模型未开通 / 无权限：用户去控制台开通后应尽快恢复，只冷却 1 小时
+    static let unavailableCooldown: TimeInterval = 3600
+
+    /// 哪些润色错误要标记冷却并换下一个模型；nil = 不降级（网络等错误原样返回）
+    static func cooldown(for error: AIPolisher.PolishError) -> TimeInterval? {
+        switch error {
+        case .quotaExhausted: return cooldown
+        case .modelUnavailable: return unavailableCooldown
+        default: return nil
+        }
+    }
 
     static func exhaustedKey(_ model: String) -> String { "polish_auto_exhausted_until." + model }
 
@@ -45,8 +56,9 @@ public enum PolishModelRouter {
     }
 
     /// 标记某模型额度类失败（403），冷却期内自动路由与设置页都视为「额度可能已用完」。
-    public static func markExhausted(_ model: String, now: Date = Date(), defaults: UserDefaults = .standard) {
-        defaults.set(now.timeIntervalSince1970 + cooldown, forKey: exhaustedKey(model))
+    public static func markExhausted(_ model: String, for duration: TimeInterval = cooldown,
+                                     now: Date = Date(), defaults: UserDefaults = .standard) {
+        defaults.set(now.timeIntervalSince1970 + duration, forKey: exhaustedKey(model))
     }
 
     public static func isExhausted(_ model: String, now: Date = Date(), defaults: UserDefaults = .standard) -> Bool {

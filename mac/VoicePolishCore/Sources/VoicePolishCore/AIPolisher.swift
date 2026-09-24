@@ -534,11 +534,12 @@ public class AIPolisher {
         }
         debugLog?("Cloud ASR polish qwen attempt model=\(model)")
         callChatCompletionsWithTokens(url: url, apiKey: apiKey, body: makeBody(model)) { [weak self] result in
-            if case .failure(let err) = result, case PolishError.quotaExhausted = err {
-                PolishModelRouter.markExhausted(model)
+            if case .failure(let err) = result, let polishError = err as? PolishError,
+               let cooldown = PolishModelRouter.cooldown(for: polishError) {
+                PolishModelRouter.markExhausted(model, for: cooldown)
                 let rest = Array(candidates.dropFirst())
                 if let self = self, let next = rest.first {
-                    self.debugLog?("Cloud ASR polish qwen: \(model) 额度类失败(403)，自动降级到 \(next)")
+                    self.debugLog?("Cloud ASR polish qwen: \(model) 不可用(403: \(polishError.localizedDescription))，自动降级到 \(next)")
                     self.attemptQwenPolish(candidates: rest, url: url, apiKey: apiKey,
                                            makeBody: makeBody, completion: completion)
                     return
@@ -634,7 +635,7 @@ public class AIPolisher {
                     // 服务端业务错误：把真实原因带出去，别再吞成 parseError。
                     // 403 单独标为额度类失败（免费额度用完即停/欠费），自动路由靠它降级换模型。
                     if (response as? HTTPURLResponse)?.statusCode == 403 {
-                        completion(.failure(PolishError.quotaExhausted(apiMessage)))
+                        completion(.failure(Self.classify403(json: json, message: apiMessage)))
                     } else {
                         completion(.failure(PolishError.apiError(apiMessage)))
                     }
@@ -763,9 +764,9 @@ public class AIPolisher {
                     if !text.isEmpty { TrialManager.shared.recordSelfKeyUsage(chars: text.count) }
                     completion(.success(text))
                 case .failure(let err):
-                    if case PolishError.quotaExhausted = err {
-                        PolishModelRouter.markExhausted(model)
-                        self?.debugLog?("Ask: \(model) 额度类失败，降级到下一个")
+                    if let polishError = err as? PolishError, let cooldown = PolishModelRouter.cooldown(for: polishError) {
+                        PolishModelRouter.markExhausted(model, for: cooldown)
+                        self?.debugLog?("Ask: \(model) 不可用(403)，降级到下一个")
                         attempt(index + 1, search: search)
                     } else if search, case PolishError.apiError = err {
                         self?.debugLog?("Ask with enable_search failed, retrying without: \(err)")
@@ -847,7 +848,7 @@ public class AIPolisher {
             guard statusCode == 200 else {
                 let json = try? JSONSerialization.jsonObject(with: errorBody) as? [String: Any]
                 let message = AIPolisher.extractAPIErrorMessage(from: json) ?? "HTTP \(statusCode)"
-                completion(.failure(statusCode == 403 ? PolishError.quotaExhausted(message) : PolishError.apiError(message)))
+                completion(.failure(statusCode == 403 ? AIPolisher.classify403(json: json, message: message) : PolishError.apiError(message)))
                 return
             }
             let text = accumulated.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -1014,6 +1015,7 @@ public class AIPolisher {
         case parseError
         case apiError(String)   // 服务端返回的业务错误（鉴权/限流等），带真实原因
         case quotaExhausted(String)   // 403 额度类失败（免费额度用完即停/欠费），自动路由靠它降级
+        case modelUnavailable(String) // 403 但不是额度问题（模型未开通 / Key 无此模型权限），也降级，但短冷却、如实报原因
 
         public var errorDescription: String? {
             switch self {
@@ -1022,8 +1024,24 @@ public class AIPolisher {
             case .parseError: return "润色返回无法解析"
             case .apiError(let msg): return msg
             case .quotaExhausted(let msg): return msg
+            case .modelUnavailable(let msg): return "模型未开通或无权限：\(msg)"
             }
         }
+    }
+
+    /// 403 分两种：额度/欠费（当天不会恢复，长冷却）与模型未开通/无权限（用户开通后立刻可用，短冷却）。
+    /// 只按错误码和原文里的额度类关键字判断，认不出的按「未开通」处理——不再把一切 403 都说成额度用完。
+    static func classify403(json: [String: Any]?, message: String) -> PolishError {
+        var haystack = message
+        if let err = json?["error"] as? [String: Any] {
+            haystack += " " + ((err["code"] as? String) ?? "") + " " + ((err["message"] as? String) ?? "")
+        }
+        if let code = json?["code"] as? String { haystack += " " + code }
+        let quotaMarkers = ["quota", "freetier", "free tier", "arrearage", "overdue", "exhausted", "balance",
+                            "额度", "欠费", "余额"]
+        let lower = haystack.lowercased()
+        return quotaMarkers.contains(where: { lower.contains($0) })
+            ? .quotaExhausted(message) : .modelUnavailable(message)
     }
 
     /// 从 OpenAI 兼容 / DashScope 的错误响应里取人话原因：

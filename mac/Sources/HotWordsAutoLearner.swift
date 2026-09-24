@@ -80,8 +80,9 @@ final class HotWordsAutoLearner {
     /// 编辑停止多久后，认为这段文字已经定稿
     private let idleFinalizeDelay: TimeInterval = 4
 
-    /// 粘贴后如果读不到输入框，直接跳过本次学习，避免后台重试干扰主体验。
-    private let startRetryCount = 1
+    /// 粘贴后读不到输入框（网页 / Electron 输入框要几百毫秒才更新 AX 值）时，最多再试两次；
+    /// 仍读不到就跳过本次学习。每次只是一次 AX 读取，不影响主体验。
+    private let startRetryCount = 3
     private let startRetryDelay: TimeInterval = 0.5
 
     var debugLog: ((String) -> Void)?

@@ -71,4 +71,12 @@ final class CloudASRTranscriberTests: XCTestCase {
         seed = seed &* 6364136223846793005 &+ 1442695040888963407
         return Float(Int32(truncatingIfNeeded: seed >> 32)) / Float(Int32.max)
     }
+
+    func testTransientNetworkErrorsAreRetriable() {
+        typealias E = CloudASRTranscriber.TranscriptionError
+        XCTAssertTrue(E.network(underlying: URLError(.networkConnectionLost)).isRetriableInPlace)
+        XCTAssertTrue(E.network(underlying: URLError(.timedOut)).isRetriableInPlace)
+        XCTAssertFalse(E.network(underlying: URLError(.notConnectedToInternet)).isRetriableInPlace)
+        XCTAssertFalse(E.parseError.isRetriableInPlace)
+    }
 }

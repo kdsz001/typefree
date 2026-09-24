@@ -113,6 +113,11 @@ public final class CloudASRTranscriber {
         public var isRetriableInPlace: Bool {
             switch self {
             case .serverBusy, .timeout: return true
+            case .network(let underlying):
+                // 连接中途断开 / 连不上 / 请求超时：换个时机重发大概率成功；断网（notConnectedToInternet）重试也没用
+                let transient: Set<URLError.Code> = [.networkConnectionLost, .timedOut, .cannotConnectToHost,
+                                                     .secureConnectionFailed, .cannotFindHost, .dnsLookupFailed]
+                return (underlying as? URLError).map { transient.contains($0.code) } ?? false
             default: return false
             }
         }

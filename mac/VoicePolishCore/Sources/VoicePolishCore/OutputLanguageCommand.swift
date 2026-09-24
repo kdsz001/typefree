@@ -4,6 +4,7 @@ import Foundation
 /// 识别完全用程序规则，不交给模型「领会」：
 /// - 只认句首和句尾，中间出现一律当正文；
 /// - 句首口令后面要有停顿（标点或空格），避免「用英文写信的人越来越少」这类正文被误认；
+/// - 句尾的「用X / 说X」前面也要有停顿（或后面带「吧 / 好吗」），避免「我不太会用英文」被整句翻译；
 /// - 口令前面紧跟「不要 / 别 / 不用」等否定词的不算（「这段话不要翻译成英文」是正文）；
 /// - 去掉口令后正文要有实质内容，只有口令的整句当正文。
 public struct OutputLanguageCommand: Equatable {
@@ -49,7 +50,17 @@ public struct OutputLanguageCommand: Equatable {
             for candidate in trailingCandidates where candidate.lowercased().hasSuffix(p) {
                 let bodyEnd = candidate.index(candidate.endIndex, offsetBy: -phrase.count)
                 let body = String(candidate[..<bodyEnd])
-                let boundaryOK = !needsPunctuation || hasPunctuationBoundary(body.unicodeScalars.reversed())
+                let strippedFiller = candidate != trimmed
+                let boundaryOK: Bool
+                if needsPunctuation {
+                    boundaryOK = hasPunctuationBoundary(body.unicodeScalars.reversed())
+                } else if isAmbiguousPhrase(phrase) && !strippedFiller {
+                    // 「用英文 / 说英文」在正文里很常见（「我不太会用英文」「开会都说英文」），
+                    // 紧贴正文时不算口令：要么前面有停顿，要么后面带了「吧 / 好吗」这类口令语气。
+                    boundaryOK = body.unicodeScalars.last.map(isSeparator) ?? false
+                } else {
+                    boundaryOK = true
+                }
                 if boundaryOK, !isNegated(before: body), let stripped = validBody(trimEdges(body)) {
                     return OutputLanguageCommand(target: language, position: .trailing, matchedPhrase: phrase, strippedText: stripped)
                 }
@@ -96,6 +107,11 @@ public struct OutputLanguageCommand: Equatable {
             guard let filler = trailingFillers.first(where: { lower.hasSuffix($0.lowercased()) }) else { return current }
             current = trimEdges(String(current.dropLast(filler.count)))
         }
+    }
+
+    /// 「用X / 说X」这类口令同时也是普通动宾短语；「翻译成X / 转X / X输出」则只会是口令。
+    static func isAmbiguousPhrase(_ phrase: String) -> Bool {
+        phrase.hasPrefix("用") || phrase.hasPrefix("说")
     }
 
     /// 口令前面（去掉标点后）紧跟否定词 → 是正文，不是口令

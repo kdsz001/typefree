@@ -191,4 +191,18 @@ final class OutputLanguageCommandTests: XCTestCase {
         XCTAssertEqual(onlyDefault?.target.id, "en")
         XCTAssertEqual(onlyDefault?.text, "明天开会")
     }
+
+    // 「用X / 说X」紧贴正文时是普通句子，不能把整句翻掉
+    func testAmbiguousTrailingPhraseNeedsPause() {
+        XCTAssertNil(detect("我不太会用英文"))
+        XCTAssertNil(detect("我们开会都说英文"))
+        XCTAssertNil(detect("他平时习惯用日语"))
+        XCTAssertNil(detect("小朋友在家都说中文"))
+        // 有停顿或口令语气 → 仍是口令
+        XCTAssertEqual(detect("明天开会，用英文")?.strippedText, "明天开会")
+        XCTAssertEqual(detect("明天开会用英文吧")?.strippedText, "明天开会")
+        // 明确的翻译指令不受影响
+        XCTAssertEqual(detect("明天开会翻译成英文")?.strippedText, "明天开会")
+        XCTAssertEqual(detect("明天开会转英文")?.strippedText, "明天开会")
+    }
 }

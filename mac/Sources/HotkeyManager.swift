@@ -327,6 +327,8 @@ class HotkeyManager {
     var onGestureClassified: ((Bool) -> Void)?
     /// 键盘长按期间按 Esc：丢弃本次录音（对应鼠标长按的「拖开取消」）
     var onCancel: (() -> Void)?
+    /// 按下后很快组合了别的键 → 这次按下只是快捷键的一部分，静默丢弃录音
+    var onDiscard: (() -> Void)?
 
     init(
         onStart: @escaping () -> Bool,
@@ -449,9 +451,14 @@ class HotkeyManager {
               event.modifierFlags.contains(configuredModifier.eventFlag) else { return }
 
         switch gestureState {
-        case .pressing(let startedAt, _):
-            gestureState = .pressing(startedAt: startedAt, sawChord: true)
-            debugLog?("keyDown while pressing: treating gesture as hold/chord keyCode=\(event.keyCode)")
+        case .pressing:
+            // 刚按下修饰键就接着按了别的键（⌘C、⌥←、Fn+↑…）：这是快捷键，不是要说话。
+            // 静默丢掉这次录音，不发识别请求，也不弹「撤销」胶囊。
+            holdPromotionWorkItem?.cancel()
+            holdPromotionWorkItem = nil
+            gestureState = .idle
+            debugLog?("keyDown while pressing: chord keyCode=\(event.keyCode) → discard")
+            onDiscard?()
         case .holdRecording(let startedAt, _):
             gestureState = .holdRecording(startedAt: startedAt, sawChord: true)
             debugLog?("keyDown while holding: chord keyCode=\(event.keyCode)")

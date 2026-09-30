@@ -181,18 +181,22 @@ public final class VoicePolishPipeline {
                 self.handleCloudOnlyText(rawText, mode: mode, pipelineStart: pipelineStart, samples: samples, entryID: entryID)
             case .failure(let error):
                 self.log("Cloud ASR failed in \(String(format: "%.1f", transcribeTime))s (version=\(version.rawValue)): \(error)")
-                self.handleCloudFailure(error, samples: samples, version: version,
+                self.handleCloudFailure(error, samples: samples, version: version, elapsed: transcribeTime,
                                         triedVersions: triedVersions, inPlaceRetried: inPlaceRetried,
                                         mode: mode, pipelineStart: pipelineStart, entryID: entryID)
             }
         }
     }
 
+    /// 失败耗时超过这个值就不再整段原地重试
+    static let inPlaceRetryMaxElapsed: TimeInterval = 20
+
     /// 识别失败处理：临时错误（服务器繁忙/超时）原地重试当前版本一次；否则如实报错。
     /// 不再自动切换到其它识别版本——用户选哪个就用哪个，失败就报错，绝不偷偷换模型或改默认。
     private func handleCloudFailure(_ error: Error,
                                     samples: [Float],
                                     version: CloudASRTranscriber.ASRVersion,
+                                    elapsed: TimeInterval,
                                     triedVersions: Set<String>,
                                     inPlaceRetried: Bool,
                                     mode: ProcessingMode,
@@ -204,8 +208,10 @@ public final class VoicePolishPipeline {
             return
         }
 
-        // 临时性错误（服务器繁忙/超时）：原地重试同一版本一次（不换版本）
-        if let e = asrError, e.isRetriableInPlace, !inPlaceRetried {
+        // 临时性错误（服务器繁忙/超时/网络抖动）：原地重试同一版本一次（不换版本）。
+        // 只重试「很快就失败」的：已经耗掉整个超时预算的再来一遍，用户要再干等一倍时间；
+        // 分段识别内部对每段已各重试过一次，这里不再叠加。
+        if let e = asrError, e.isRetriableInPlace, !inPlaceRetried, elapsed < Self.inPlaceRetryMaxElapsed {
             log("Transient failure, retrying same version once")
             transcribeCloud(samples: samples, version: version,
                             triedVersions: triedVersions, inPlaceRetried: true,

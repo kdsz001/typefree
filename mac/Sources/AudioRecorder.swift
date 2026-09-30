@@ -47,7 +47,11 @@ class AudioRecorder {
         guard shouldResume else { return }
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
             guard let self = self, self.isCapturing else { return }
-            try? self.startEngineIfNeeded()
+            do {
+                try self.restartCapture()
+            } catch {
+                NSLog("[AudioRecorder] Failed to restart after microphone change: %@", error.localizedDescription)
+            }
         }
     }
 
@@ -139,11 +143,24 @@ class AudioRecorder {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
             guard let self = self, self.isCapturing else { return }
             do {
-                try self.startEngineIfNeeded()
-                NSLog("[AudioRecorder] Engine restarted after config change")
+                try self.restartCapture()
+                NSLog("[AudioRecorder] Capture restarted after config change")
             } catch {
                 NSLog("[AudioRecorder] Failed to restart after config change: %@", error.localizedDescription)
             }
+        }
+    }
+
+    /// 录音中途重建采集：按当前的麦克风选择走 AVAudioEngine 或 AUHAL，并先停掉另一条，
+    /// 否则两路同时往 rawBuffers 里写，音频会交错成乱码（选了指定麦克风、录音中拔掉它时会发生）。
+    private func restartCapture() throws {
+        if MicrophoneManager.shared.selectedUID == MicrophoneManager.systemDefaultUID {
+            stopAUHAL()
+            try startEngineIfNeeded()
+        } else {
+            teardownEngine()
+            stopAUHAL()
+            try startAUHAL()
         }
     }
 

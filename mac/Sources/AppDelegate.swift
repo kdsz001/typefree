@@ -1267,6 +1267,14 @@ class AppDelegate: NSObject, NSApplicationDelegate, SettingsWindowDelegate, SPUU
     private lazy var updateUserDriver = TypefreeUpdateUserDriver(owner: self)
     lazy var updater = SPUUpdater(hostBundle: .main, applicationBundle: .main, userDriver: updateUserDriver, delegate: self)
 
+    /// 官方签名版在构建时注入了试用服务器地址（见 build.sh / TrialManager.configuredAPIBase）；
+    /// 开源仓库自己编出来的没有，据此区分。
+    static var isOfficialBuild: Bool {
+        guard let raw = Bundle.main.object(forInfoDictionaryKey: "VPTrialAPIBase") as? String else { return false }
+        let v = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        return !v.isEmpty && !v.hasPrefix("$(")
+    }
+
     /// 菜单栏「检查更新…」转发到 Sparkle。
     @objc func checkForUpdates(_ sender: Any?) {
         updateUserDriver.beginUserInitiatedCheck()
@@ -1478,7 +1486,13 @@ class AppDelegate: NSObject, NSApplicationDelegate, SettingsWindowDelegate, SPUU
 
         do {
             try updater.start()
-            if updater.automaticallyChecksForUpdates,
+            if !Self.isOfficialBuild {
+                // 自己从源码编译的版本：更新源是官方 appcast，自动下载会把本地改动悄悄换成官方版。
+                // 关掉自动检查/下载；菜单里的「检查更新…」仍可手动用。
+                updater.automaticallyChecksForUpdates = false
+                updater.automaticallyDownloadsUpdates = false
+                debugLog("Sparkle: source build, automatic updates disabled")
+            } else if updater.automaticallyChecksForUpdates,
                updater.allowsAutomaticUpdates,
                !updater.automaticallyDownloadsUpdates {
                 updater.automaticallyDownloadsUpdates = true

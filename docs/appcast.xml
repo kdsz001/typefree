@@ -273,5 +273,14 @@
             <description><![CDATA[<h3>网络不好时不再卡住</h3><ul><li><strong>不会再一直停在「Thinking」</strong>：以前网络偶尔卡一下，Typefree 会一直等、还自动重试好几轮，最久要卡两三分钟才提示网络问题。现在等不到回音就会尽快提示，一段十几秒的话最多等半分钟左右。</li><li><strong>识别、整理过程中也能按 Esc 取消</strong>：以前只有录音时按 Esc 管用，说完之后在识别、整理时就只能干等。现在随时按 Esc 都能取消，取消后几秒内还可以点「撤销」找回。</li><li><strong>没识别出来的录音都留在历史里</strong>：识别失败的录音不管长短都会存进历史记录，点右侧「···」→「重试」就能重新识别，话不会白说。以前只有 20 秒以上的录音才会保留。</li></ul><h3>长段话不再丢后半截</h3><ul><li><strong>后半段没识别出来会告诉你</strong>：说长段话时，如果最后一小段因为网络问题没识别出来，以前只打出前半段、什么提示都没有。现在会先自动再试一次；还不行，就照常打出前半段，并提示后半段没识别出来。整段录音在历史记录里，可以点「重试」重新识别整段。</li></ul>]]></description>
             <enclosure url="https://github.com/kdsz001/typefree/releases/download/v3.0.9/Typefree-3.0.9.dmg" sparkle:edSignature="HsXVWuBmLNo+p+TlJxAz2NxdpArbvsZdtmMxcads9VBqh1NebpXse+RWjeo2lwMBzEoYTFzmK1zk1zw9CMj9AQ==" length="2814903" type="application/octet-stream"/>
         </item>
+        <item>
+            <title>3.0.10</title>
+            <sparkle:version>3.0.10</sparkle:version>
+            <sparkle:shortVersionString>3.0.10</sparkle:shortVersionString>
+            <pubDate>Thu, 08 Oct 2026 17:19:57 +0000</pubDate>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+            <description><![CDATA[<h3>修复重复识别导致的用量异常</h3><ul><li><strong>不再反复识别同一段录音</strong>：录音中遇到“没有人声”或识别失败时，会带上后续声音补救一次；仍然失败，就等松手后再处理剩余录音，避免反复上传旧音频、异常消耗会员额度或自带 API Key 的用量。</li><li><strong>保留未识别的声音</strong>：补救没成功的声音会留到松手后一起处理，不会因为一次误判就漏掉说过的话。</li></ul><h3>整理更听话</h3><ul><li>你说的话里带有“帮我整理一下”“你觉得呢”这类句子时，AI 会照常整理你的原话，不会再回一句“请提供需要整理的内容”。</li></ul>]]></description>
+            <enclosure url="https://github.com/kdsz001/typefree/releases/download/v3.0.10/Typefree-3.0.10.dmg" sparkle:edSignature="ogAU0Z2jjei65cgIJdzFmKhJEMaoPZ5FJueOMUnDZDRPF/Uhva4K0giPZt3Ft9UkGhXzuN4In+/ZCjE4T70RCQ==" length="2816820" type="application/octet-stream"/>
+        </item>
     </channel>
 </rss>

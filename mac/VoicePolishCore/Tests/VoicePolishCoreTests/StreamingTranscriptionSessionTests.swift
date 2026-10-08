@@ -173,36 +173,149 @@ final class StreamingTranscriptionSessionTests: XCTestCase {
         wait(for: [exp], timeout: 3)
     }
 
-    // MARK: - 空段前向合并：某段识别为空 → 不推进，音频并入后续，不丢内容
+    // MARK: - 空/无语音/失败仅补救一次，仍失败则保留音频等松手
 
-    func testEmptyCommitMergesForward() {
-        var callIndex = 0
-        let lock = NSLock()
-        var committedStartsAtZeroAgain = false
+    func testEmptyCommitRetriesOnceThenWaitsForFinishAndPreservesAudio() {
+        var commitCalls = 0
+        var tailCalls = 0
+        var tailSamples: [Float] = []
         let session = StreamingTranscriptionSession(chunkTranscriber: { _, done in
-            lock.lock(); callIndex += 1; let n = callIndex; lock.unlock()
-            // 第一段返回空 → 应触发前向合并（提交位置不前进）
-            DispatchQueue.global().async { done(.success(n == 1 ? "" : "有")) }
-        }, tailTranscriber: { _, done in
-            DispatchQueue.global().async { done(.success("尾")) }
+            commitCalls += 1
+            done(.success(" \n"))
+        }, tailTranscriber: { samples, done in
+            tailCalls += 1
+            tailSamples = samples
+            done(.success("恢复的完整内容"))
         })
-        let snapshot = speechWithPauses(blocks: 6)
-
-        // 第一次提交（返回空）
-        XCTAssertTrue(ingestOnce(session, snapshot))
-        XCTAssertEqual(session.committedIndexForTest, 0, "空段不应推进提交位置")
-        committedStartsAtZeroAgain = (session.committedIndexForTest == 0)
-        XCTAssertTrue(committedStartsAtZeroAgain)
-
-        // 后续提交（有内容）→ 应越过之前的空切点、包含那段音频
-        drainCommits(session, snapshot)
-        XCTAssertGreaterThan(session.committedIndexForTest, 0, "后续应成功提交并前进")
+        let finalSamples = speechWithPauses(blocks: 6)
+        XCTAssertTrue(ingestOnce(session, Array(finalSamples.prefix(18 * sampleRate))))
+        XCTAssertEqual(session.committedIndexForTest, 0, "空结果不能直接丢掉音频")
+        XCTAssertTrue(ingestOnce(session, Array(finalSamples.prefix(20 * sampleRate))),
+                      "首次空结果可带上后续音频再补救一次")
+        for seconds in stride(from: 22, through: 36, by: 2) {
+            XCTAssertFalse(ingestOnce(session, Array(finalSamples.prefix(seconds * sampleRate))),
+                           "连续两次空结果后应等松手，不能随录音增长反复上传旧音频")
+        }
+        XCTAssertEqual(commitCalls, 2)
 
         let exp = expectation(description: "finish")
-        session.finish(finalSamples: snapshot) { result in
+        session.finish(finalSamples: finalSamples) { result in
             guard case .success(let text) = result else { return XCTFail() }
-            XCTAssertTrue(text.contains("有") && text.hasSuffix("尾"))
-            XCTAssertFalse(text.isEmpty)
+            XCTAssertEqual(text, "恢复的完整内容")
+            XCTAssertEqual(tailSamples, finalSamples, "松手后仍须包含此前误判为空的音频")
+            XCTAssertEqual(tailCalls, 1)
+            exp.fulfill()
+        }
+        wait(for: [exp], timeout: 3)
+    }
+
+    /// 回归 2026-10-07：每 2 秒取一次越来越长的快照，服务器持续返回无语音。
+    /// 旧逻辑反复上传同一前缀，把几分钟录音累加成两小时会员用量。
+    func testNoSpeechOnGrowingRecordingStopsRepeatedUploads() {
+        var commitCalls = 0
+        var uploadedSamples = 0
+        let session = StreamingTranscriptionSession(chunkTranscriber: { samples, done in
+            commitCalls += 1
+            uploadedSamples += samples.count
+            done(.failure(CloudASRTranscriber.TranscriptionError.noSpeech))
+        }, tailTranscriber: { samples, done in
+            uploadedSamples += samples.count
+            done(.success("松手后恢复"))
+        })
+        let finalSamples = speechWithPauses(blocks: 20) // 120 秒，带停顿以触发录音中提交
+        for seconds in stride(from: 8, through: 120, by: 2) {
+            ingestOnce(session, Array(finalSamples.prefix(seconds * sampleRate)))
+        }
+        XCTAssertEqual(commitCalls, 2, "连续两次无语音后不能每两秒重新识别越来越长的旧音频")
+        XCTAssertEqual(session.committedIndexForTest, 0)
+
+        let exp = expectation(description: "finish")
+        session.finish(finalSamples: finalSamples) { result in
+            guard case .success(let text) = result else { return XCTFail() }
+            XCTAssertEqual(text, "松手后恢复")
+            XCTAssertLessThanOrEqual(uploadedSamples, finalSamples.count + 24 * self.sampleRate,
+                                    "总上传量应限于首次短段、一次补救与松手后的完整录音")
+            exp.fulfill()
+        }
+        wait(for: [exp], timeout: 3)
+    }
+
+    func testFailedCommitPreservesPendingAudioAndCommittedText() {
+        var commitCalls = 0
+        var tailSamples: [Float] = []
+        let session = StreamingTranscriptionSession(chunkTranscriber: { _, done in
+            commitCalls += 1
+            done(commitCalls == 1 ? .success("前半段") : .failure(FakeError()))
+        }, tailTranscriber: { samples, done in
+            tailSamples = samples
+            done(.success("后半段"))
+        })
+        let finalSamples = speechWithPauses(blocks: 6)
+        XCTAssertTrue(ingestOnce(session, finalSamples))
+        let committedIndex = session.committedIndexForTest
+        XCTAssertGreaterThan(committedIndex, 0)
+        XCTAssertTrue(ingestOnce(session, finalSamples))
+        XCTAssertTrue(ingestOnce(session, finalSamples), "首次失败后允许补救一次")
+        XCTAssertFalse(ingestOnce(session, finalSamples), "补救仍失败后应暂停录音中提交")
+        XCTAssertEqual(commitCalls, 3)
+        XCTAssertEqual(session.committedIndexForTest, committedIndex)
+
+        let exp = expectation(description: "finish")
+        session.finish(finalSamples: finalSamples) { result in
+            guard case .success(let text) = result else { return XCTFail() }
+            XCTAssertEqual(text, "前半段后半段")
+            XCTAssertEqual(tailSamples, Array(finalSamples[committedIndex...]),
+                           "只重识别未成功提交的音频，保留失败段及后续内容")
+            exp.fulfill()
+        }
+        wait(for: [exp], timeout: 3)
+    }
+
+    func testSingleFailedCommitRecoversWithMoreAudioAndResumesStreaming() {
+        var uploadedChunks: [[Float]] = []
+        var tailSamples: [Float] = []
+        let session = StreamingTranscriptionSession(chunkTranscriber: { samples, done in
+            uploadedChunks.append(samples)
+            switch uploadedChunks.count {
+            case 1, 3: done(.failure(CloudASRTranscriber.TranscriptionError.noSpeech))
+            case 2: done(.success("恢复一"))
+            default: done(.success("恢复二"))
+            }
+        }, tailTranscriber: { samples, done in
+            tailSamples = samples
+            done(.success("尾"))
+        })
+        let finalSamples = speechWithPauses(blocks: 6)
+        let shortSnapshot = Array(finalSamples.prefix(8 * sampleRate))
+        XCTAssertTrue(ingestOnce(session, shortSnapshot))
+        let firstAttempt = uploadedChunks[0]
+        XCTAssertFalse(ingestOnce(session, shortSnapshot), "没有足够的新音频时不能重传同一段")
+        XCTAssertEqual(uploadedChunks.count, 1)
+
+        XCTAssertTrue(ingestOnce(session, finalSamples))
+        XCTAssertEqual(uploadedChunks.count, 2)
+        guard uploadedChunks.count == 2 else { return }
+        XCTAssertEqual(Array(uploadedChunks[1].prefix(firstAttempt.count)), firstAttempt,
+                       "补救必须保留被误判为无语音的声音")
+        XCTAssertGreaterThanOrEqual(uploadedChunks[1].count - firstAttempt.count,
+                                    Int(StreamingTranscriptionSession.minCommitSeconds * Double(sampleRate)))
+        let firstRecoveredIndex = session.committedIndexForTest
+        XCTAssertEqual(firstRecoveredIndex, uploadedChunks[1].count)
+        XCTAssertEqual(session.committedText, "恢复一")
+
+        // 成功后正常处理新段；新段的一次误判也可补救，不把一整次录音的容错机会用光。
+        XCTAssertTrue(ingestOnce(session, finalSamples))
+        XCTAssertEqual(session.committedIndexForTest, firstRecoveredIndex)
+        XCTAssertTrue(ingestOnce(session, finalSamples))
+        let finalCommittedIndex = session.committedIndexForTest
+        XCTAssertGreaterThan(finalCommittedIndex, firstRecoveredIndex)
+        XCTAssertEqual(session.committedText, "恢复一恢复二")
+
+        let exp = expectation(description: "finish")
+        session.finish(finalSamples: finalSamples) { result in
+            guard case .success(let text) = result else { return XCTFail() }
+            XCTAssertEqual(text, "恢复一恢复二尾")
+            XCTAssertEqual(tailSamples, Array(finalSamples[finalCommittedIndex...]))
             exp.fulfill()
         }
         wait(for: [exp], timeout: 3)

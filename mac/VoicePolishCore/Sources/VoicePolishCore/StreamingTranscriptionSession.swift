@@ -4,9 +4,10 @@ import Foundation
 /// 从而让长录音「松手→出字」的等待基本恒定，不再随录音时长增长。
 ///
 /// 设计（串行提交，简单可靠）：
-/// - 录音中定期 ingest(整段快照)。在 [已提交位置, 活边缘-安全边距] 内找停顿，凑够 ~9s 就提交一段；
+/// - 录音中定期 ingest(整段快照)。在 [已提交位置, 活边缘-安全边距] 内找停顿，凑够 ~6s 就提交一段；
 ///   同一时刻只允许一段在途（识别 ~2s 足以跟上语速），避免复杂的乱序与并发。
-/// - 某段识别为空/无语音 → 不推进已提交位置，这段音频自然并入下一段（前向合并），绝不丢内容。
+/// - 某段识别为空/无语音/失败 → 保留未识别音频，带上至少一小段后续音频补救一次；成功后正常分段，
+///   连续两次空/失败则暂停到松手。不随快照增长无限重传同一前缀，也不丢弃可能被误判的语音。
 /// - finish(最终整段) 时：等在途段完成，再把剩余尾巴走 tailTranscriber（末尾分段+无语音恢复），
 ///   与前面已识别的文字按顺序拼接。
 /// - 全程无停顿（连续说话）→ 录音中不提交，退化为「松手后整段识别」，与原行为一致。
@@ -39,7 +40,8 @@ public final class StreamingTranscriptionSession {
     private var committedIndex = 0        // 此前的音频都已识别、文字已入 texts
     private var committedTexts: [String] = []
     private var committing = false        // 是否有一段在途
-    private var lastEmptyCut = -1         // 上次提交返回空的切点（下次要越过它）
+    private var failedCommitCut: Int?     // 首次空/失败的切点；补救须带上后续音频，且只允许一次
+    private var streamingSuspended = false // 补救仍空/失败后等松手，未识别音频从 committedIndex 保留
     private var finished = false
     private var pendingFinish: (finalSamples: [Float], completion: (Result<String, Error>) -> Void)?
 
@@ -79,20 +81,21 @@ public final class StreamingTranscriptionSession {
     // MARK: - 提交（录音中）
 
     private func tryCommit(snapshot: [Float]) {
-        guard !finished, !committing else { onIngestIdle?(); return }
+        guard !finished, !committing, !streamingSuspended else { onIngestIdle?(); return }
         let sr = Double(Self.sampleRate)
         let liveEnd = snapshot.count - Int(Self.liveMarginSeconds * sr)
         let minChunk = Int(Self.minCommitSeconds * sr)
-        guard liveEnd - committedIndex >= minChunk else { onIngestIdle?(); return }
+        let searchStart = failedCommitCut ?? committedIndex
+        guard liveEnd - searchStart >= minChunk else { onIngestIdle?(); return }
 
         // 用整段快照算停顿（floor/speech 更稳），再筛到可提交窗口
         let candidates = AudioChunker.pauseCandidates(samples: snapshot)
         guard !candidates.isEmpty else { onIngestIdle?(); return }
 
-        let target = committedIndex + Int(Self.targetCommitSeconds * sr)
+        let target = searchStart + Int(Self.targetCommitSeconds * sr)
         let cut = candidates
             .map { $0.centerSample }
-            .filter { $0 > lastEmptyCut && $0 - committedIndex >= minChunk && $0 <= liveEnd }
+            .filter { $0 - searchStart >= minChunk && $0 <= liveEnd }
             .min { abs($0 - target) < abs($1 - target) }
         guard let cut = cut else { onIngestIdle?(); return }
 
@@ -111,11 +114,17 @@ public final class StreamingTranscriptionSession {
         case .success(let text) where !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty:
             committedTexts.append(text)
             committedIndex = cut
-            lastEmptyCut = -1
+            failedCommitCut = nil
         default:
-            // 空/无语音/失败：不推进，这段音频并入后续（前向合并）；越过此切点避免反复选它
-            lastEmptyCut = cut
-            log("stream commit empty/failed, will merge forward")
+            // 不推进可避免丢字；首次空/失败允许并入后续音频补救一次，仍失败就停止录音中重传。
+            // runFinish 仍从 committedIndex 识别全部剩余音频；成功后清除失败切点，恢复正常分段。
+            if failedCommitCut == nil {
+                failedCommitCut = cut
+                log("stream commit empty/failed, will merge with next chunk once")
+            } else {
+                streamingSuspended = true
+                log("stream commit empty/failed twice, suspended until finish")
+            }
         }
         onCommitProcessed?(committedIndex)
         // 若收尾在等在途段，现在补做

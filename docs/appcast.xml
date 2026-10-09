@@ -282,5 +282,14 @@
             <description><![CDATA[<h3>修复重复识别导致的用量异常</h3><ul><li><strong>不再反复识别同一段录音</strong>：录音中遇到“没有人声”或识别失败时，会带上后续声音补救一次；仍然失败，就等松手后再处理剩余录音，避免反复上传旧音频、异常消耗会员额度或自带 API Key 的用量。</li><li><strong>保留未识别的声音</strong>：补救没成功的声音会留到松手后一起处理，不会因为一次误判就漏掉说过的话。</li></ul><h3>整理更听话</h3><ul><li>你说的话里带有“帮我整理一下”“你觉得呢”这类句子时，AI 会照常整理你的原话，不会再回一句“请提供需要整理的内容”。</li></ul>]]></description>
             <enclosure url="https://github.com/kdsz001/typefree/releases/download/v3.0.10/Typefree-3.0.10.dmg" sparkle:edSignature="ogAU0Z2jjei65cgIJdzFmKhJEMaoPZ5FJueOMUnDZDRPF/Uhva4K0giPZt3Ft9UkGhXzuN4In+/ZCjE4T70RCQ==" length="2816820" type="application/octet-stream"/>
         </item>
+        <item>
+            <title>3.0.11</title>
+            <sparkle:version>3.0.11</sparkle:version>
+            <sparkle:shortVersionString>3.0.11</sparkle:shortVersionString>
+            <pubDate>Fri, 09 Oct 2026 08:30:22 +0000</pubDate>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+            <description><![CDATA[<h3>提示更准确</h3><ul><li><strong>自带 Key 时不再误报「试用已结束」</strong>：如果「语音识别」选的服务还没填 Key（比如切到了百炼，但只填过火山引擎的 Key），现在会直接告诉你是哪个服务没填，以及可以改选哪个已经填好的；如果系统钥匙串暂时读不出 Key，也会提示你重启后点「允许」。以前这两种情况都会被误报成「试用已结束」。</li></ul>]]></description>
+            <enclosure url="https://github.com/kdsz001/typefree/releases/download/v3.0.11/Typefree-3.0.11.dmg" sparkle:edSignature="7u+2YKV6DCNqFVmBSh+2pE+bB12M6QGYT74HJapPNvAIBRpmxaU6VShj8hwnvRFQUgUTqK2Cvfeuqp7oTLeXBw==" length="2817457" type="application/octet-stream"/>
+        </item>
     </channel>
 </rss>

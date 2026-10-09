@@ -96,7 +96,11 @@ public final class VoicePolishConfig {
 
     public func string(forKey key: String, envKey: String? = nil, persistEnvValue: Bool = false) -> String? {
         if Self.secretKeys.contains(key) {
-            if let v = secrets.get(key), !v.isEmpty { return v }
+            switch secrets.lookup(key) {
+            case .found(let v) where !v.isEmpty: return v
+            case .error(let reason): debugLog?("[config] keychain read \(key) failed: \(reason)")
+            default: break
+            }
             if let v = configValue(forKey: key), !v.isEmpty { return v }   // 迁移完成前的明文兜底
             if let envKey = envKey,
                let v = ProcessInfo.processInfo.environment[envKey], !v.isEmpty {
@@ -120,6 +124,13 @@ public final class VoicePolishConfig {
         }
 
         return nil
+    }
+
+    /// 敏感键在钥匙串里「读不到」（被锁 / 拒绝授权等），区别于「确实没填」。
+    public func secretUnreadable(forKey key: String) -> Bool {
+        guard Self.secretKeys.contains(key) else { return false }
+        if case .error = secrets.lookup(key) { return true }
+        return false
     }
 
     public func bool(forKey key: String, defaultValue: Bool = false) -> Bool {

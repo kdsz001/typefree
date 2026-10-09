@@ -6,6 +6,20 @@ public final class CloudASRTranscriber {
     public enum ASRProvider {
         case volcano   // 火山引擎
         case bailian   // 阿里百炼（DashScope）
+
+        /// 与设置页「语音识别」服务商选项一致
+        public var displayName: String {
+            switch self {
+            case .volcano: return "火山引擎"
+            case .bailian: return "百炼"
+            }
+        }
+    }
+
+    /// 当前识别服务没有可用 Key、但用户其实是自带 Key 的情况（工单 #1030：原先一律提示「试用已结束」，误导）。
+    public enum OwnKeyIssue: Equatable {
+        case keychainUnreadable                                  // 填过，但钥匙串这会儿读不出来
+        case missingForCurrent(current: ASRProvider, configured: ASRProvider)  // 选的服务没 Key，另一家有
     }
 
     /// 可切换的识别版本，各有独立免费额度：火山三档 + 百炼一档。
@@ -126,10 +140,12 @@ public final class CloudASRTranscriber {
     private static let bailianURL = "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions"
     private static let bailianModel = ASRVersion.bailian.modelIdentifier
 
-    private let config = VoicePolishConfig.shared
+    private let config: VoicePolishConfig
     public var debugLog: ((String) -> Void)?
 
-    public init() {}
+    public init(config: VoicePolishConfig = .shared) {
+        self.config = config
+    }
 
     // 热词词表统一由 PersonalVocabulary 提供（内置 + 自定义 + 个人词库）
 
@@ -142,6 +158,32 @@ public final class CloudASRTranscriber {
         switch version.provider {
         case .volcano: return volcanoCredentials() != nil
         case .bailian: return dashscopeAPIKey() != nil
+        }
+    }
+
+    /// 当前识别服务没配好时，判断是不是「自带 Key 用户」的配置问题；nil = 确实没填任何识别 Key（走试用/会员流程）。
+    public func ownKeyIssue() -> OwnKeyIssue? {
+        let version = currentVersion()
+        guard !isConfigured(version: version) else { return nil }
+        let secretKeys = version.provider == .volcano ? ["bigasr_api_key", "bigasr_access_token"] : ["dashscope_api_key"]
+        if secretKeys.contains(where: { config.secretUnreadable(forKey: $0) }) { return .keychainUnreadable }
+        switch version.provider {
+        case .volcano where dashscopeAPIKey() != nil:
+            return .missingForCurrent(current: .volcano, configured: .bailian)
+        case .bailian where volcanoCredentials() != nil:
+            return .missingForCurrent(current: .bailian, configured: .volcano)
+        default:
+            return nil
+        }
+    }
+
+    /// 给用户看的一句话提示（录音胶囊里显示）。
+    public static func hint(for issue: OwnKeyIssue) -> String {
+        switch issue {
+        case .keychainUnreadable:
+            return "读不到钥匙串里的 Key · 重启 Typefree 再试，系统询问时点「允许」"
+        case .missingForCurrent(let current, let configured):
+            return "语音识别选的「\(current.displayName)」还没填 Key · 在「设置 → 模型」填上，或改选已填 Key 的「\(configured.displayName)」"
         }
     }
 

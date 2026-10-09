@@ -2291,6 +2291,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, SettingsWindowDelegate, SPUU
         if isProcessing { return false }
 
         if processingMode.usesCloudTranscription && !cloudTranscriber.isConfigured() {
+            // 自带 Key 用户（选的服务没 Key / 钥匙串读不到）：说清楚原因，别提示「试用已结束」误导（工单 #1030）
+            let ownKeyHint = cloudTranscriber.ownKeyIssue().map(CloudASRTranscriber.hint(for:))
+            if let ownKeyHint { debugLog("Cloud ASR own key issue: \(ownKeyHint)") }
             if !LicenseManager.shared.isActivated {
                 if TrialManager.shared.isInTrial {
                     // 7 天总额用完 = 试用结束（服务器会 429），别再上传音频白跑一趟
@@ -2313,14 +2316,14 @@ class AppDelegate: NSObject, NSApplicationDelegate, SettingsWindowDelegate, SPUU
                 }
                 if TrialManager.shared.trialExpired {
                     if showFeedback {
-                        overlayWindow.showHint("试用已结束 · 开通会员，或在「设置 → 模型」填自己的 Key")
+                        overlayWindow.showHint(ownKeyHint ?? "试用已结束 · 开通会员，或在「设置 → 模型」填自己的 Key")
                     }
                     return false
                 }
                 if !TrialManager.shared.isTrialAvailable {
                     // 自己编译的开源版没有试用通道（试用地址不进公开仓库）：直接引导填 Key。
                     if showFeedback {
-                        overlayWindow.showHint("请先在「设置 → 模型」里填入 API Key")
+                        overlayWindow.showHint(ownKeyHint ?? "请先在「设置 → 模型」里填入 API Key")
                     }
                     return false
                 }
@@ -2352,7 +2355,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SettingsWindowDelegate, SPUU
                 return false
             }
             if showFeedback {
-                overlayWindow.showHint("请先在「设置 → 模型」里填入 API key")
+                overlayWindow.showHint(ownKeyHint ?? "请先在「设置 → 模型」里填入 API key")
                 debugLog("Cloud ASR unavailable: \(cloudTranscriber.missingConfigurationHint())")
             }
             return false

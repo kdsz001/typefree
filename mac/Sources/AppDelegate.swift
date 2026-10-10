@@ -1714,10 +1714,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, SettingsWindowDelegate, SPUU
         streamingSession = session
         // 每 2s 取样一次：提交更勤 → 松手时未提交的尾巴更小 → 松手后等待更短。
         streamingTimer = Timer.scheduledTimer(withTimeInterval: 2.0, repeats: true) { [weak self] _ in
-            guard let self = self, self.isRecording else { return }
+            // streamingSession 只在主线程读写：在这里取好再交给后台，别在后台线程读它（松手时主线程会置 nil）
+            guard let self = self, self.isRecording, let session = self.streamingSession else { return }
+            guard let recorder = self.audioRecorder else { return }
             DispatchQueue.global(qos: .utility).async {
-                guard let session = self.streamingSession else { return }
-                session.ingest(snapshot: self.audioRecorder.snapshotSamples())
+                session.ingest(snapshot: recorder.snapshotSamples())
             }
         }
     }

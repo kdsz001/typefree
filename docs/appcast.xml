@@ -318,5 +318,14 @@
             <description><![CDATA[<h3>新增</h3><ul><li><strong>快捷键可以只认右边的 Option 或 Control</strong>：首页「长按 [键] 开始说话」点中间的键，菜单里新增「右 Option」「右 Control」。左边的键照常拿来按快捷键，不会再误触发语音输入。（Mac 自带键盘没有右 Control，外接键盘才有。）</li></ul><h3>修复</h3><ul><li><strong>单击快捷键开始录音，不会再一两秒就自己停</strong>：按下快捷键时 App 要打开麦克风，偶尔会卡一下，以前会把快速点按误当成「长按」，一松手就停了。现在不管卡没卡，点一下都能保持录音，再点一下才结束。</li><li><strong>英文句子之间不再粘在一起</strong>：说好几句英文时，句子之间的空格会被吞掉，变成「today.I think」这样。关掉 AI 整理的话会直接看到这种结果。现在空格会保留，中文不受影响。</li><li><strong>麦克风启动失败时不再闪退</strong>：选了某个麦克风、它又刚好启动不了（比如刚被拔掉、被别的软件占用），以前 App 可能直接退出，现在只会提示失败。</li><li><strong>识别失败时的提示更准确</strong>：只有录音真的存进了历史，才会提示「录音已存进历史，可点重试」。如果你关了「保存历史」，或历史暂时存不进去，会如实提示，不会再让你以为录音还在。</li></ul>]]></description>
             <enclosure url="https://github.com/kdsz001/typefree/releases/download/v3.0.14/Typefree-3.0.14.dmg" sparkle:edSignature="oTTA+2aDBl70TRqLsS3DpAsj8QsMq3d0uftt+7cXyGfDRv+y1Sodz7hY+t9eewSq5LJEUj86njFCR8A2QPdeBQ==" length="2794358" type="application/octet-stream"/>
         </item>
+        <item>
+            <title>3.0.15</title>
+            <sparkle:version>3.0.15</sparkle:version>
+            <sparkle:shortVersionString>3.0.15</sparkle:shortVersionString>
+            <pubDate>Wed, 28 Oct 2026 08:23:33 +0000</pubDate>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+            <description><![CDATA[<h3>修复</h3><ul><li><strong>⌘W 可以关闭窗口了</strong>：打开 Typefree 的窗口后，按 ⌘W 就能关掉，和点左上角红色按钮一样。</li><li><strong>历史记录里点「复制输出」会有提示了</strong>：按钮会短暂变成「✓ 已复制」，一看就知道复制上了。</li></ul>]]></description>
+            <enclosure url="https://github.com/kdsz001/typefree/releases/download/v3.0.15/Typefree-3.0.15.dmg" sparkle:edSignature="zEP4XCaf3Y7I5CAOBtSepd9V43pJKzHSqdBAE93vHGauVG42sNSjNg0goaHS9CQSgQRJZ7Ka+C4kb23ke24IBw==" length="2796001" type="application/octet-stream"/>
+        </item>
     </channel>
 </rss>

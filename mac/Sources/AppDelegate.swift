@@ -2264,7 +2264,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SettingsWindowDelegate, SPUU
         }
     }
 
-    /// 建立标准主菜单（App 菜单 + 编辑菜单）。
+    /// 建立标准主菜单（App 菜单 + 编辑菜单 + 窗口菜单）。
     /// 关键作用：编辑菜单里「剪切/拷贝/粘贴/全选/撤销」带标准快捷键，
     /// macOS 正是靠这些菜单项把 Cmd+X/C/V/A/Z 分发给当前输入框。
     /// 之前 App 没有主菜单，所以这些快捷键全失效，只能右键粘贴。
@@ -2293,6 +2293,13 @@ class AppDelegate: NSObject, NSApplicationDelegate, SettingsWindowDelegate, SPUU
         editMenu.addItem(withTitle: "拷贝", action: #selector(NSText.copy(_:)), keyEquivalent: "c")
         editMenu.addItem(withTitle: "粘贴", action: #selector(NSText.paste(_:)), keyEquivalent: "v")
         editMenu.addItem(withTitle: "全选", action: #selector(NSText.selectAll(_:)), keyEquivalent: "a")
+
+        // 窗口菜单（让 ⌘W 关闭当前窗口，和点左上角红色按钮一样；工单 #1042）
+        let windowItem = NSMenuItem()
+        mainMenu.addItem(windowItem)
+        let windowMenu = NSMenu(title: "窗口")
+        windowItem.submenu = windowMenu
+        windowMenu.addItem(withTitle: "关闭窗口", action: #selector(NSWindow.performClose(_:)), keyEquivalent: "w")
 
         NSApp.mainMenu = mainMenu
     }

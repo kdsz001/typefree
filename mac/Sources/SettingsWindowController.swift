@@ -5904,7 +5904,20 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate, NSTe
         guard historyEntries.indices.contains(sender.tag) else { return }
         NSPasteboard.general.clearContents()
         NSPasteboard.general.setString(historyEntries[sender.tag].output, forType: .string)
+        // 按钮短暂变成「✓ 已复制」，让人知道确实复制上了（以前点了没任何反应，工单 #1049）
+        let original = sender.title
+        guard original != Self.copiedButtonTitle else { return }
+        if !sender.constraints.contains(where: { $0.firstAttribute == .width && $0.secondItem == nil }) {
+            sender.widthAnchor.constraint(equalToConstant: sender.frame.width).isActive = true   // 换字时宽度不跳
+        }
+        sender.title = Self.copiedButtonTitle
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) { [weak sender] in
+            guard let sender, sender.title == Self.copiedButtonTitle else { return }
+            sender.title = original
+        }
     }
+
+    private static let copiedButtonTitle = "✓ 已复制"
 
     // MARK: - 历史条目操作（播放 / 导出 / 重润色 / 重转写 / 删除）
 

@@ -140,7 +140,8 @@ public enum FeedbackService {
         session.dataTask(with: req) { _, response, error in
             DispatchQueue.main.async {
                 if let error = error {
-                    completion(.failure(.network(error.localizedDescription)))
+                    // 系统原话是英文、证书类错误里还带服务器地址：换成中文短句（体检 修4）
+                    completion(.failure(.network(UserFacingError.message(for: error, fallback: "网络出错，请稍后再试"))))
                     return
                 }
                 let code = (response as? HTTPURLResponse)?.statusCode ?? 0

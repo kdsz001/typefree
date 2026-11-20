@@ -73,6 +73,12 @@ final class HotWordsAutoLearner {
     /// 监控时长（秒）
     private let monitorDuration: TimeInterval = 60
 
+    /// 读前台 App 输入框的单次跨进程超时（体检 优10）。以前没设、用系统全局默认值（头文件没写具体秒数，常见说法约 6 秒）：
+    /// 对方 App 卡住时，主线程每 0.5 秒被拖住一次。超时只对设过的那个元素对象生效、不会传给它的子元素，所以每个元素都要设。
+    /// 正常读取都是毫秒级；给 1 秒而不是出字那条路的 0.25 秒（TextDelivery.axTimeout）——网页类 App 读大段文字偶尔慢，
+    /// 别因为超时太紧少学词。超时 = 读不到，按现有「输入框不可读 → 停止监控」处理。
+    private static let axTimeout: Float = 1.0
+
     /// 修正词最短长度（允许单字纠正，如 "向"→"相"）
     private let minCorrectionLength = 1
 
@@ -137,6 +143,7 @@ final class HotWordsAutoLearner {
         }
 
         self.deliveredText = deliveredText
+        AXUIElementSetMessagingTimeout(focusedElement, Self.axTimeout)   // 之后每 0.5 秒都读它，同样不能被卡住的 App 拖住
         self.targetElement = focusedElement
         self.initialValue = currentValue
         self.deliveredRange = range
@@ -963,13 +970,18 @@ final class HotWordsAutoLearner {
         guard AXUIElementCopyAttributeValue(systemWide, kAXFocusedApplicationAttribute as CFString, &focusedApp) == .success else {
             return nil
         }
+        let app = focusedApp as! AXUIElement
+        // 对方 App 卡住时别拖住主线程（每 0.5 秒读一次）。只设在这个 App 的元素上——
+        // 设在 system-wide 元素上会改掉整个进程的全局超时
+        AXUIElementSetMessagingTimeout(app, Self.axTimeout)
 
         var focusedElement: AnyObject?
-        guard AXUIElementCopyAttributeValue(focusedApp as! AXUIElement, kAXFocusedUIElementAttribute as CFString, &focusedElement) == .success else {
+        guard AXUIElementCopyAttributeValue(app, kAXFocusedUIElementAttribute as CFString, &focusedElement) == .success else {
             return nil
         }
 
         let element = focusedElement as! AXUIElement
+        AXUIElementSetMessagingTimeout(element, Self.axTimeout)
 
         var role: AnyObject?
         AXUIElementCopyAttributeValue(element, kAXRoleAttribute as CFString, &role)

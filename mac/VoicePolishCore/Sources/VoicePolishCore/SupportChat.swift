@@ -66,6 +66,9 @@ public enum SupportChatError: Error, Equatable {
     case tooLarge
     case blocked
     case ticketClosed
+    /// 服务器说反馈凭证不对（403 bad_secret；老服务器是 403 forbidden）。发消息 / 开工单时会自动换新标识重开一次，
+    /// 重开后还这样才会交到界面上。
+    case credentialRejected
     case network(String)
 
     public var userMessage: String {
@@ -74,13 +77,24 @@ public enum SupportChatError: Error, Equatable {
         case .tooLarge: return "附件太大了"
         case .blocked: return "这台设备已被停用反馈"
         case .ticketClosed: return "这个工单已结束，有新问题请提交新工单"
+        case .credentialRejected: return "发送失败：反馈凭证对不上，请稍后再试"
         case .network(let s): return "发送失败：\(s)"
         }
     }
 }
 
 public final class SupportChatService {
-    public static let shared = SupportChatService()
+    public static let shared = SupportChatService(secretStore: SupportChatService.platformSecretStore)
+
+    /// 反馈凭证（和反馈专用标识）在钥匙串里另存一份：清过偏好设置 / 重装后从这里找回，
+    /// 不然服务器一直回「凭证不对」、这台电脑再也发不了工单（体检优9）。
+    static var platformSecretStore: SecretStoring? {
+        #if os(iOS)
+        return KeychainSecretStore(service: "com.voicepolish.support", accessGroup: "NHC4C4K7X7.com.voicepolish.shared")
+        #else
+        return KeychainSecretStore(service: "com.voicepolish.support")
+        #endif
+    }
 
     /// 工单或消息有变化（发出、收到回复、状态变、未读数变）时发，主线程
     public static let didChangeNotification = Notification.Name("SupportChatDidChange")
@@ -93,13 +107,18 @@ public final class SupportChatService {
     public static let pollInterval: TimeInterval = 5 * 60
 
     private let defaults: UserDefaults
+    private let secretStore: SecretStoring?
     private let session: URLSession
     private let storeDir: URL
     private let apiBaseOverride: String?
     private let kSecret = "support.secret"
+    /// 反馈专用标识：凭证丢了重开对话时生成（见 resetFeedbackIdentity）。没有就用 LicenseManager.deviceID()
+    private let kFeedbackDeviceID = "support.deviceId"
     private let kLastSeen = "support.lastSeenId"          // 工单上线前的「全部已读到哪条」，作为各工单已读的下限
     private let kSeenByTicket = "support.seenByTicket"    // [工单 id: 已读到的消息 id]
     private let queue = DispatchQueue(label: "support.chat.store")
+    /// 钥匙串读写全在这个串行队列上（不卡主线程）；发消息也先排到这里，保证读到的是找回后的凭证
+    private let secretQueue = DispatchQueue(label: "support.chat.secret")
 
     public private(set) var messages: [SupportMessage] = []
     public private(set) var tickets: [SupportTicket] = []
@@ -108,15 +127,107 @@ public final class SupportChatService {
     public init(defaults: UserDefaults = .standard,
                 storeDir: URL? = nil,
                 apiBase: String? = nil,
-                session: URLSession = .shared) {
+                session: URLSession = .shared,
+                secretStore: SecretStoring? = nil) {
         self.defaults = defaults
+        self.secretStore = secretStore
         self.session = session
         self.apiBaseOverride = apiBase
         self.storeDir = storeDir ?? VoicePolishConfig.shared.configDirectoryURL.appendingPathComponent("support", isDirectory: true)
         try? FileManager.default.createDirectory(at: self.storeDir, withIntermediateDirectories: true)
         messages = loadMessages()
         tickets = loadTickets()
+        if secretStore != nil {
+            secretQueue.async { [weak self] in self?.reconcileWithSecretStore() }
+        }
     }
+
+    // MARK: - 凭证（偏好设置 + 钥匙串）
+
+    /// 后台队列上跑：偏好设置里没有凭证 → 从钥匙串找回（连同反馈专用标识）；有 → 确保钥匙串里也有一份
+    /// （老用户升级到这版后补存）。钥匙串读出错就什么都不做，保持原来的行为。
+    private func reconcileWithSecretStore() {
+        guard let store = secretStore else { return }
+        let local = defaults.string(forKey: kSecret) ?? ""
+        if local.isEmpty {
+            guard case .found(let saved) = store.lookup(kSecret), !saved.isEmpty else { return }
+            let savedID: String?
+            switch store.lookup(kFeedbackDeviceID) {
+            case .found(let id) where Self.isValidFeedbackDeviceID(id): savedID = id
+            case .found, .notFound: savedID = nil
+            case .error: return   // 标识读不出来：凭证和标识配不上对，宁可不找回
+            }
+            defaults.set(saved, forKey: kSecret)
+            if let savedID { defaults.set(savedID, forKey: kFeedbackDeviceID) } else { defaults.removeObject(forKey: kFeedbackDeviceID) }
+            DispatchQueue.main.async { [weak self] in self?.notify() }
+        } else {
+            backUp(secret: local, deviceID: defaults.string(forKey: kFeedbackDeviceID), to: store)
+        }
+    }
+
+    /// 钥匙串里的和当前不一样才写；读出错不写
+    private func backUp(secret: String?, deviceID: String?, to store: SecretStoring) {
+        for (account, value) in [(kSecret, secret), (kFeedbackDeviceID, deviceID)] {
+            let wanted = value ?? ""
+            switch store.lookup(account) {
+            case .error: continue
+            case .found(let saved) where saved == wanted: continue
+            case .notFound where wanted.isEmpty: continue
+            default: store.set(account, wanted)
+            }
+        }
+    }
+
+    /// 服务器发的新凭证：偏好设置马上写，钥匙串在后台补一份
+    func saveSecret(_ secret: String) {
+        defaults.set(secret, forKey: kSecret)
+        let deviceID = defaults.string(forKey: kFeedbackDeviceID)
+        secretQueue.async { [weak self] in
+            guard let self, let store = self.secretStore else { return }
+            self.backUp(secret: secret, deviceID: deviceID, to: store)
+        }
+    }
+
+    /// 所有 /support/* 请求用的设备标识：重开过对话就用反馈专用标识，否则照旧用设备标识
+    var feedbackDeviceID: String {
+        if let id = defaults.string(forKey: kFeedbackDeviceID), Self.isValidFeedbackDeviceID(id) { return id }
+        return LicenseManager.shared.deviceID()
+    }
+
+    /// 服务器的规矩：^[A-Za-z0-9._:-]{8,128}$
+    static func isValidFeedbackDeviceID(_ id: String) -> Bool {
+        id.range(of: #"^[A-Za-z0-9._:-]{8,128}$"#, options: .regularExpression) != nil
+    }
+
+    /// 新的反馈专用标识：<设备标识>.<16 位随机十六进制>
+    static func makeFeedbackDeviceID(base: String) -> String {
+        let suffix = (0..<8).map { _ in String(format: "%02x", UInt8.random(in: 0...255)) }.joined()
+        return "\(base).\(suffix)"
+    }
+
+    /// 服务器说凭证不对（403 bad_secret）时的唯一处理入口（主线程）。服务器不能凭设备标识把旧对话交还
+    /// （标识不是秘密），所以换一个新的反馈专用标识、当新设备重新开始：清掉本地旧凭证和旧工单缓存
+    /// （旧工单以后同步不到，别显示过期状态），钥匙串同步更新。之后的请求一律用新标识、先不带凭证。
+    func resetFeedbackIdentity() {
+        let newID = Self.makeFeedbackDeviceID(base: LicenseManager.shared.deviceID())
+        defaults.set(newID, forKey: kFeedbackDeviceID)
+        defaults.removeObject(forKey: kSecret)
+        defaults.removeObject(forKey: kLastSeen)
+        defaults.removeObject(forKey: kSeenByTicket)
+        messages = []
+        tickets = []
+        saveMessages()
+        saveTickets()
+        secretQueue.async { [weak self] in
+            guard let self, let store = self.secretStore else { return }
+            store.set(self.kSecret, nil)
+            store.set(self.kFeedbackDeviceID, newID)
+        }
+        notify()
+    }
+
+    /// 测试用：等钥匙串那边排着的读写做完
+    func waitForSecretStore() { secretQueue.sync {} }
 
     // MARK: - 状态
 
@@ -231,6 +342,14 @@ public final class SupportChatService {
     /// 开新工单：out.text 是问题描述（必填）。新设备的第一张工单服务器不收附件（attachmentsDropped=true），调用方再补发一条。
     public func createTicket(category: SupportTicket.Category, _ out: Outgoing,
                              completion: @escaping (Result<(ticket: SupportTicket, attachmentsDropped: Bool), SupportChatError>) -> Void) {
+        openTicket(category: category, out, allowReopen: true) { result in
+            completion(result.map { ($0.ticket, $0.attachmentsDropped) })
+        }
+    }
+
+    /// allowReopen：凭证不对时换新标识重开一次（重开的那次不再重开，防死循环）
+    private func openTicket(category: SupportTicket.Category, _ out: Outgoing, allowReopen: Bool,
+                            completion: @escaping (Result<(ticket: SupportTicket, message: SupportMessage, attachmentsDropped: Bool), SupportChatError>) -> Void) {
         guard !out.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
             DispatchQueue.main.async { completion(.failure(.network("先描述一下遇到的问题"))) }
             return
@@ -238,6 +357,10 @@ public final class SupportChatService {
         post(path: "/support/tickets/create", out: out, ticketId: nil, category: category) { [weak self] result in
             guard let self else { return }
             switch result {
+            case .failure(.credentialRejected) where allowReopen:
+                // 新标识＝新设备：这条不带凭证重发，服务器发新凭证；带的附件会被丢（attachments_dropped），界面那边会补发
+                self.resetFeedbackIdentity()
+                self.openTicket(category: category, out, allowReopen: false, completion: completion)
             case .failure(let e): completion(.failure(e))
             case .success(let (json, msg)):
                 guard let t = (json["ticket"] as? [String: Any]).flatMap(SupportTicket.init(json:)) else {
@@ -246,7 +369,7 @@ public final class SupportChatService {
                 }
                 self.upsertTickets([t])
                 self.append([msg])
-                completion(.success((t, json["attachments_dropped"] as? Bool ?? false)))
+                completion(.success((t, msg, json["attachments_dropped"] as? Bool ?? false)))
             }
         }
     }
@@ -256,6 +379,8 @@ public final class SupportChatService {
         post(path: "/support/send", out: out, ticketId: ticketId, category: nil) { [weak self] result in
             guard let self else { return }
             switch result {
+            case .failure(.credentialRejected):
+                self.reopenAndResend(out, completion: completion)
             case .failure(let e):
                 if e == .ticketClosed { self.sync() }   // 工单在别处被结束了：拉一下，让页面变成只读
                 completion(.failure(e))
@@ -266,10 +391,49 @@ public final class SupportChatService {
         }
     }
 
+    /// 在旧工单里回复时凭证不对：旧工单属于旧标识、以后同步不到了，这条话换新标识开成一个新工单发出去；
+    /// 新标识第一条只收文字，带的截图 / 录音紧跟着补发进新工单。只重开这一次。
+    private func reopenAndResend(_ out: Outgoing, completion: @escaping (Result<SupportMessage, SupportChatError>) -> Void) {
+        resetFeedbackIdentity()
+        guard !out.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            completion(.failure(.network("反馈记录需要重新开始，请先写一句话说明问题再发，截图和录音可以随后附上")))
+            return
+        }
+        openTicket(category: .other, out, allowReopen: false) { [weak self] result in
+            guard let self else { return }
+            switch result {
+            case .failure(let e): completion(.failure(e))
+            case .success(let created) where created.attachmentsDropped && (out.imageJPEG != nil || out.audioM4A != nil):
+                var followUp = out
+                followUp.text = ""
+                followUp.asrText = nil; followUp.polishedText = nil; followUp.log = nil   // 这些已随第一条发出
+                self.post(path: "/support/send", out: followUp, ticketId: created.ticket.id, category: nil) { [weak self] r2 in
+                    switch r2 {
+                    case .success(let (_, msg2)):
+                        self?.append([msg2])
+                        completion(.success(created.message))
+                    case .failure:
+                        completion(.failure(.network("文字已发出，截图 / 录音没发成功，可以再附上发一次")))
+                    }
+                }
+            case .success(let created):
+                completion(.success(created.message))
+            }
+        }
+    }
+
     private func post(path: String, out: Outgoing, ticketId: Int?, category: SupportTicket.Category?,
                       completion: @escaping (Result<([String: Any], SupportMessage), SupportChatError>) -> Void) {
+        // 排到钥匙串队列后面：刚启动时凭证可能还在从钥匙串找回，别拿着空凭证去撞「凭证不对」
+        secretQueue.async { [weak self] in
+            self?.performPost(path: path, out: out, ticketId: ticketId, category: category, completion: completion)
+        }
+    }
+
+    private func performPost(path: String, out: Outgoing, ticketId: Int?, category: SupportTicket.Category?,
+                             completion: @escaping (Result<([String: Any], SupportMessage), SupportChatError>) -> Void) {
         let os = ProcessInfo.processInfo.operatingSystemVersion
-        let deviceID = LicenseManager.shared.deviceID()
+        let deviceID = feedbackDeviceID
         guard let payload = Self.makePayload(out, deviceID: deviceID, secret: defaults.string(forKey: kSecret),
                                              osVersion: "\(os.majorVersion).\(os.minorVersion)",
                                              ticketId: ticketId, category: category) else {
@@ -289,7 +453,9 @@ public final class SupportChatService {
         session.dataTask(with: req) { [weak self] data, response, error in
             guard let self else { return }
             if let error {
-                DispatchQueue.main.async { completion(.failure(.network(error.localizedDescription))) }
+                // 系统原话（localizedDescription）是英文 / 带服务器地址，换成同一套中文短句
+                let reason = UserFacingError.networkMessage(for: error) ?? "网络不通"
+                DispatchQueue.main.async { completion(.failure(.network(reason))) }
                 return
             }
             let code = (response as? HTTPURLResponse)?.statusCode ?? 0
@@ -299,7 +465,7 @@ public final class SupportChatService {
                 return
             }
             if let secret = json["secret"] as? String, !secret.isEmpty {
-                self.defaults.set(secret, forKey: self.kSecret)
+                self.saveSecret(secret)
             }
             let dropped = json["attachments_dropped"] as? Bool ?? false
             var localFile: String?
@@ -322,6 +488,9 @@ public final class SupportChatService {
         case "blocked": return .blocked
         case "body_too_large", "bad_image": return .tooLarge
         case "ticket_closed": return .ticketClosed
+        // 凭证不对。老服务器用笼统的 forbidden（用户端接口里只在凭证不对时用），一并认，不受发版先后影响
+        case "bad_secret": return .credentialRejected
+        case "forbidden" where code == 403: return .credentialRejected
         default:
             if let msg = json?["error"] as? String, !msg.isEmpty, code >= 400, code < 500 { return .network(msg) }
             return .network(code == 0 ? "网络不通" : "服务器返回 \(code)")
@@ -345,16 +514,20 @@ public final class SupportChatService {
         req.setValue("application/json", forHTTPHeaderField: "Content-Type")
         req.timeoutInterval = 20
         req.httpBody = try? JSONSerialization.data(withJSONObject: [
-            "device_id": LicenseManager.shared.deviceID(), "secret": secret, "after_id": after,
+            "device_id": feedbackDeviceID, "secret": secret, "after_id": after,
         ])
         session.dataTask(with: req) { [weak self] data, response, _ in
             guard let self else { return }
             let code = (response as? HTTPURLResponse)?.statusCode ?? 0
-            let root = code == 200 ? data.flatMap { try? JSONSerialization.jsonObject(with: $0) as? [String: Any] } : nil
+            let json = data.flatMap { try? JSONSerialization.jsonObject(with: $0) as? [String: Any] }
+            let root = code == 200 ? json : nil
             let incoming = (root?["messages"] as? [[String: Any]] ?? []).compactMap(Self.parseMessage)
             let ticketList = (root?["tickets"] as? [[String: Any]])?.compactMap(SupportTicket.init(json:))
+            let rejected = code != 200 && Self.classify(code: code, json: json) == .credentialRejected
             DispatchQueue.main.async {
                 self.syncing = false
+                // 拉新回复时凭证不对：只换标识、清凭证，等用户下次发消息再开新对话
+                if rejected { self.resetFeedbackIdentity() }
                 if let ticketList { self.replaceTickets(ticketList) }
                 if !incoming.isEmpty { self.append(incoming) }
                 completion?(code == 200)
@@ -401,6 +574,11 @@ public final class SupportChatService {
             byId[m.id] = m
         }
         messages = byId.values.sorted { $0.id < $1.id }
+        saveMessages()
+        notify()
+    }
+
+    private func saveMessages() {
         let snapshot = messages
         let url = storeURL
         queue.async {
@@ -408,7 +586,6 @@ public final class SupportChatService {
                 try? data.write(to: url, options: .atomic)
             }
         }
-        notify()
     }
 
     func replaceTickets(_ list: [SupportTicket]) {

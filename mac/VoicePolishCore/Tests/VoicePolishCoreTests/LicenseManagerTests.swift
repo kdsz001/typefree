@@ -117,4 +117,57 @@ final class LicenseManagerTests: XCTestCase {
         XCTAssertFalse(LicenseManager.appVersionChanged(stored: "3.0.0", current: "3.0.0"))
         XCTAssertFalse(LicenseManager.appVersionChanged(stored: nil, current: ""), "读不到版本号就别乱清")
     }
+
+    // MARK: - 体检 优7：到期后 3 天宽限（与激活服务 GRACE_DAYS 一致）
+
+    func testMemberGraceDaysMatchesServer() {
+        XCTAssertEqual(LicenseManager.memberGraceDays, 3, "改这个数要和 license-worker/src/member.js 的 GRACE_DAYS 一起改")
+    }
+
+    func testMemberExpiryLocalFallbackHonorsGrace() {
+        let expiresAt = LicenseManager.parseUTC("2027-09-14 00:00:00")!
+        let grace = LicenseManager.memberGraceDays * 86_400
+        func expired(_ now: TimeInterval, server: Bool = false) -> Bool {
+            LicenseManager.isMemberExpired(serverSaysExpired: server, expiresAt: expiresAt, now: now)
+        }
+        XCTAssertFalse(expired(expiresAt - 1), "到期前")
+        XCTAssertFalse(expired(expiresAt + 1), "到期后 1 秒：自动续费回执可能还没到，不能判到期")
+        XCTAssertFalse(expired(expiresAt + 2 * 86_400), "宽限期内")
+        XCTAssertFalse(expired(expiresAt + grace - 1), "宽限截止前 1 秒")
+        XCTAssertTrue(expired(expiresAt + grace), "宽限截止那一刻（与服务器 now >= expires_at + 3 天 一致）")
+        XCTAssertTrue(expired(expiresAt + grace + 86_400), "宽限截止后")
+    }
+
+    // MARK: - 体检 优10：会员复核被 60 秒节流挡住时别误报「请检查网络」
+
+    func testRevalidationHintDoesNotBlameNetworkWhenThrottled() {
+        typealias LM = LicenseManager
+        func hint(_ o: LM.RevalidationOutcome, expired: Bool = false, active: Bool = false) -> String? {
+            LM.revalidationHint(after: o, memberExpired: expired, hasActiveMembership: active)
+        }
+        // 上一次还在路上（用户连按两下）：不补话，结果马上回来
+        XCTAssertNil(hint(.throttled(inFlight: true, lastUnreachable: false)))
+        XCTAssertNil(hint(.throttled(inFlight: true, lastUnreachable: true)))
+        // 60 秒内上一次确实没联上：说网络才是对的
+        XCTAssertEqual(hint(.throttled(inFlight: false, lastUnreachable: true)), LM.revalidationUnreachableHint)
+        // 60 秒内上一次联上了、却还是没有可用令牌：不是网络问题
+        XCTAssertEqual(hint(.throttled(inFlight: false, lastUnreachable: false)), LM.memberChannelUnavailableHint)
+        XCTAssertNil(hint(.throttled(inFlight: false, lastUnreachable: false), active: true))
+        // 这次真没联上
+        XCTAssertEqual(hint(.unreachable), LM.revalidationUnreachableHint)
+        // 服务器确认有效：拿到令牌不补；到期（已含宽限）说到期；有效但没令牌（旧服务器宽限期内）说暂时用不了
+        XCTAssertNil(hint(.valid, active: true))
+        XCTAssertEqual(hint(.valid, expired: true), LM.memberExpiredHint)
+        XCTAssertEqual(hint(.valid), LM.memberChannelUnavailableHint)
+        // 服务器明确说失效：本机已退出激活，不说网络
+        XCTAssertNil(hint(.invalid))
+    }
+
+    func testMemberExpiryServerVerdictWins() {
+        let expiresAt = LicenseManager.parseUTC("2027-09-14 00:00:00")!
+        XCTAssertTrue(LicenseManager.isMemberExpired(serverSaysExpired: true, expiresAt: expiresAt, now: expiresAt - 86_400),
+                      "服务器明确说到期就是到期（已算宽限），不看本地时钟")
+        XCTAssertFalse(LicenseManager.isMemberExpired(serverSaysExpired: false, expiresAt: nil, now: 0),
+                       "服务器没给到期时间：不在本地判到期")
+    }
 }

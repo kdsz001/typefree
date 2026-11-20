@@ -33,6 +33,17 @@ public final class VoicePolishPipeline {
     private var activeEntryID: String?
     private let activeLock = NSLock()
 
+    /// 正在等润色结果的那一次（体检 优10：润色总封顶）。润色结果回来、调用方放弃润色（giveUpPolishing），
+    /// 谁先到谁收尾、并把它清掉；后到的那个看见已经不是自己，直接丢掉——不会出第二遍字、记第二条历史。
+    /// 与 activeEntryID 同一把锁。
+    private struct PendingPolish {
+        let entryID: String
+        let characters: Int
+        /// 放弃润色时走的收尾：和「润色失败」是同一段（提醒原因 → 输出原文 → 记历史）
+        let fallBack: (_ reason: String?) -> Void
+    }
+    private var pendingPolish: PendingPolish?
+
     // 依赖的组件
     private let aiPolisher: AIPolisher
     private let cloudTranscriber: CloudASRTranscriber
@@ -51,12 +62,63 @@ public final class VoicePolishPipeline {
     // MARK: - 取消
 
     /// 放弃正在处理的这一次：之后它的结果都不再回调、不写历史。返回是否真的有一次在处理。
+    /// 同时取消识别转写器上在途的识别（优3）：已发出的直连请求掐断，分段识别剩下的段、轮询、重试都不再发。
+    /// 取消的是整个转写器上的识别——Mac 上「边录边发」会话也用同一个转写器，而 App 取消时只调这里，所以一起停。
     @discardableResult
     public func cancelCurrent() -> Bool {
-        activeLock.lock(); defer { activeLock.unlock() }
+        activeLock.lock()
         let had = activeEntryID != nil
         activeEntryID = nil
+        pendingPolish = nil
+        activeLock.unlock()
+        // 先置空再取消：取消后晚到的失败回调看到「已不是这一次」，不会再当识别失败去存历史
+        cloudTranscriber.cancelAllInFlight()
         return had
+    }
+
+    // MARK: - 放弃润色（体检 优10：润色总封顶）
+
+    /// 正在润色的这次交去润色的文字有多少字；没在润色时为 nil。调用方据此定「最多等多久」。
+    public var polishingCharacterCount: Int? {
+        activeLock.lock(); defer { activeLock.unlock() }
+        guard let p = pendingPolish, p.entryID == activeEntryID else { return nil }
+        return p.characters
+    }
+
+    /// 润色等太久，调用方不等了：这次走和「润色失败」完全同一段收尾——onPolishFailed(reason) 提醒、输出原文、照常记历史。
+    /// 之后润色结果再回来一律丢掉。没在润色（还在识别 / 已出字 / 已取消）返回 false，什么都不做。
+    /// 不取消识别、不动转写器（和 cancelCurrent 不同）。
+    @discardableResult
+    public func giveUpPolishing(reason: String) -> Bool {
+        activeLock.lock()
+        guard let p = pendingPolish, p.entryID == activeEntryID else {
+            activeLock.unlock()
+            return false
+        }
+        pendingPolish = nil
+        activeLock.unlock()
+        log("Polish given up by caller (\(p.characters) chars): \(reason)")
+        p.fallBack(reason)
+        return true
+    }
+
+    /// 开始等润色：先登记再发请求（登记在发出 .polishing 之前，调用方收到 .polishing 时就能读到字数）
+    private func beginPolish(_ entryID: String, characters: Int, fallBack: @escaping (_ reason: String?) -> Void) {
+        activeLock.lock()
+        pendingPolish = PendingPolish(entryID: entryID, characters: characters, fallBack: fallBack)
+        activeLock.unlock()
+    }
+
+    /// 润色结果回来：还轮得到它收尾就清掉登记并返回 true；已被 giveUpPolishing 抢先收尾返回 false（结果丢掉）
+    private func claimPolishResult(_ entryID: String) -> Bool {
+        activeLock.lock(); defer { activeLock.unlock() }
+        guard let p = pendingPolish, p.entryID == entryID else {
+            // 没有登记：要么被放弃了，要么这一次已被取消（cancelCurrent 清掉了），两种都不该再收尾；
+            // 已取消的那种 finishProcessing 本来也会丢掉，这里一并挡住
+            return false
+        }
+        pendingPolish = nil
+        return true
     }
 
     private func begin(_ entryID: String) {
@@ -228,7 +290,7 @@ public final class VoicePolishPipeline {
         }
 
         // 其它失败：如实报错，不自动切换识别版本。
-        let message = asrError?.errorDescription ?? "云端识别失败"
+        let message = UserFacingError.message(for: error, fallback: "云端识别失败")
         // 识别失败的录音不论长短都留进历史（可「重试」），避免用户白说（工单 #1024：原先只留 ≥20s 的，18 秒的话就丢了）。
         // 真的存进历史了才提示「已存进历史」（关了保存历史 / 钥匙串读不出时不能这么说）
         preserveFailedAttempt(samples: samples, entryID: entryID, pipelineStart: pipelineStart) { [weak self] saved in
@@ -274,11 +336,22 @@ public final class VoicePolishPipeline {
             finishProcessing(with: text, rawASR: rawASR, pipelineStart: pipelineStart, samples: samples, entryID: entryID)
             return
         }
+        // 润色没成（失败 / 调用方等太久放弃）：提醒原因，输出去掉口令的原文
+        let fallBack: (_ reason: String?) -> Void = { [weak self] reason in
+            guard let self = self else { return }
+            if let reason, self.isActive(entryID) { self.onPolishFailed?(reason) }
+            self.finishProcessing(with: text, rawASR: rawASR, pipelineStart: pipelineStart, samples: samples, entryID: entryID)
+        }
+        beginPolish(entryID, characters: text.count, fallBack: fallBack)
         emit(.polishing(message: "→ \(target.tag)"), entryID)
         let polishStart = Date()
         aiPolisher.polishCloudASROutput(text: text, outputLanguage: target) { [weak self] result in
             guard let self = self else { return }
             let polishTime = Date().timeIntervalSince(polishStart)
+            guard self.claimPolishResult(entryID) else {
+                self.log("Output in \(target.id) result dropped after \(String(format: "%.1f", polishTime))s (given up / cancelled)")
+                return
+            }
             switch result {
             case .success(let polished) where !polished.isEmpty:
                 self.log("Output in \(target.id) done in \(String(format: "%.1f", polishTime))s, chars=\(polished.count)")
@@ -288,11 +361,12 @@ public final class VoicePolishPipeline {
                 self.finishProcessing(with: text, rawASR: rawASR, pipelineStart: pipelineStart, samples: samples, entryID: entryID)
             case .failure(let err):
                 self.log("Output in \(target.id) failed in \(String(format: "%.1f", polishTime))s: \(err), fallback to original")
+                var reason: String?
                 if case AIPolisher.PolishError.noAPIKey = err {} else if self.isActive(entryID) {
-                    let reason = (err as? LocalizedError)?.errorDescription ?? "\(err)"
-                    self.onPolishFailed?(reason)
+                    // 以前兜底 "\(err)"：系统网络错误会把整段英文调试信息（含网址、服务器 IP）显示给用户
+                    reason = UserFacingError.message(for: err, fallback: Self.polishFailureFallback)
                 }
-                self.finishProcessing(with: text, rawASR: rawASR, pipelineStart: pipelineStart, samples: samples, entryID: entryID)
+                fallBack(reason)
             }
         }
     }
@@ -325,11 +399,22 @@ public final class VoicePolishPipeline {
         }
 
         log("Cloud-only long text (\(charCount) chars), polishing")
+        // 润色没成（失败 / 调用方等太久放弃）：文字照常输出原文（不丢用户的话），有原因就提醒一次「没润色 + 原因」
+        let fallBack: (_ reason: String?) -> Void = { [weak self] reason in
+            guard let self = self else { return }
+            if let reason, self.isActive(entryID) { self.onPolishFailed?(reason) }
+            self.finishProcessing(with: rawText, pipelineStart: pipelineStart, samples: samples, entryID: entryID)
+        }
+        beginPolish(entryID, characters: rawText.count, fallBack: fallBack)
         emit(.polishing(message: mode.polishOverlayMessage), entryID)
         let polishStart = Date()
         aiPolisher.polishCloudASROutput(text: rawText) { [weak self] result in
             guard let self = self else { return }
             let polishTime = Date().timeIntervalSince(polishStart)
+            guard self.claimPolishResult(entryID) else {
+                self.log("Cloud ASR polish result dropped after \(String(format: "%.1f", polishTime))s (given up / cancelled)")
+                return
+            }
             switch result {
             case .success(let polished):
                 let finalText = polished.isEmpty ? rawText : polished
@@ -340,18 +425,21 @@ public final class VoicePolishPipeline {
                 // 润色失败：文字照常输出（不丢用户的话），但提醒一次"没润色 + 原因"。
                 // noAPIKey（用户选了不润色/没配 key）是正常状态，不提醒；其余（额度/欠费/网络/限流）都提醒。
                 // 例外：没选「不优化」、只是没填润色 Key 且试用已结束的人，每天提醒一次，不然他不知道为什么文字没整理。
+                var reason: String?
                 if !self.isActive(entryID) {
                     // 已取消：不提醒，finishProcessing 里也会丢掉
                 } else if case AIPolisher.PolishError.noAPIKey = err {
-                    if let hint = Self.dailyPolishUnconfiguredHint() { self.onPolishFailed?(hint) }
+                    reason = Self.dailyPolishUnconfiguredHint()
                 } else {
-                    let reason = (err as? LocalizedError)?.errorDescription ?? "\(err)"
-                    self.onPolishFailed?(reason)
+                    reason = UserFacingError.message(for: err, fallback: Self.polishFailureFallback)
                 }
-                self.finishProcessing(with: rawText, pipelineStart: pipelineStart, samples: samples, entryID: entryID)
+                fallBack(reason)
             }
         }
     }
+
+    /// 润色失败原因认不出来时给用户看的话（App 显示成「已输出未润色文字（润色失败：…）」）
+    static let polishFailureFallback = "服务出错了，稍后再试"
 
     /// 试用结束 / 不是会员、又没填润色 Key、也没主动选「不优化」：每天最多提醒一次「润色未配置」。
     static func dailyPolishUnconfiguredHint(now: Date = Date()) -> String? {

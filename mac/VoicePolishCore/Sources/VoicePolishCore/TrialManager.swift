@@ -128,6 +128,56 @@ public final class TrialManager {
     /// 试用已结束（服务器明确返回过期）。区别于"试用还没拉到"。
     public var trialExpired: Bool { defaults.bool(forKey: kExpired) }
 
+    // MARK: - 握手没成功（体检 修3：新用户连不上 / 被服务器拒绝时，别永远说「正在准备免费试用」）
+
+    /// /trial/start 没拿到试用的原因
+    public enum StartFailure: Equatable {
+        /// 连不上：断网、公司网络封端口、证书对不上、超时，或服务器回了看不懂的东西
+        case unreachable
+        /// 服务器明确拒绝并给了原因（中文原话，如「今日新设备过多，请明天再试或填自己的 API Key」）
+        case rejected(message: String)
+    }
+
+    public static let preparingTrialHint = "正在准备免费试用，请稍候…"
+    public static let unreachableTrialHint = "连不上试用服务器，请检查网络，或填入自己的 API Key 继续使用"
+
+    /// 最近一次握手失败的原因；成功后清空。只在主线程读写。
+    public private(set) var lastStartFailure: StartFailure?
+    /// 连续失败了几次（成功后归零）。只在主线程读写。
+    public private(set) var consecutiveStartFailures = 0
+
+    /// 非 200 的握手响应 → 失败原因：服务器给了 error 文案就是「明确拒绝」，否则当连不上（纯函数，便于单测）
+    static func startFailure(statusCode: Int?, json: [String: Any]?) -> StartFailure {
+        if let statusCode, statusCode != 200,
+           let message = (json?["error"] as? String)?.trimmingCharacters(in: .whitespacesAndNewlines),
+           !message.isEmpty {
+            return .rejected(message: message)
+        }
+        return .unreachable
+    }
+
+    /// 试用还没拉到时给用户的话：服务器说了原因就用原话；连续两次连不上就说清楚是网络、给出路；
+    /// 只失败过一次（多半是首启那一下网络还没好）照旧请他稍候（纯函数，便于单测）。
+    public static func trialNotReadyHint(lastFailure: StartFailure?, consecutiveFailures: Int) -> String {
+        if case .rejected(let message)? = lastFailure { return message }
+        return consecutiveFailures >= 2 ? unreachableTrialHint : preparingTrialHint
+    }
+
+    public var trialNotReadyHint: String {
+        Self.trialNotReadyHint(lastFailure: lastStartFailure, consecutiveFailures: consecutiveStartFailures)
+    }
+
+    /// 记一次握手结果（主线程）：nil = 拿到了试用（或服务器明确说已过期），清零重来
+    func noteStartOutcome(_ failure: StartFailure?) {
+        if let failure {
+            lastStartFailure = failure
+            consecutiveStartFailures += 1
+        } else {
+            lastStartFailure = nil
+            consecutiveStartFailures = 0
+        }
+    }
+
     // MARK: - 刷新（联网）
 
     /// 「用户填了自己的 API Key」的查询钩子，由 App 启动时设好（Core 拿不到 App 的配置对象）。
@@ -169,9 +219,13 @@ public final class TrialManager {
         post(path: "/trial/start", body: body) { [weak self] result in
             guard let self = self else { return }
             switch result {
-            case .failure:
-                // 网络失败：保持缓存，不踢出试用；自报增量也保留，等下次再报。
-                DispatchQueue.main.async { completion?(false) }
+            case .failure(let error):
+                // 网络失败 / 被拒：保持缓存，不踢出试用；自报增量也保留，等下次再报。
+                let failure = (error as? StartFailureError)?.failure ?? .unreachable
+                DispatchQueue.main.async {
+                    self.noteStartOutcome(failure)
+                    completion?(false)
+                }
             case .success(let json):
                 // 上报成功 → 扣掉已报的增量（扣减而非清零，避免吞掉这期间新增的用量）。
                 if (selfChars > 0 || selfReqs > 0), let s = Self.sharedSuite {
@@ -180,7 +234,12 @@ public final class TrialManager {
                 }
                 let parsed = Self.parseTrialStart(json)
                 self.applyParsed(parsed)
-                DispatchQueue.main.async { completion?(parsed.token != nil || parsed.expired) }
+                let ok = parsed.token != nil || parsed.expired
+                DispatchQueue.main.async {
+                    // 200 却没给 token 也没说过期（服务器异常）：当没连上，别让用户一直等
+                    self.noteStartOutcome(ok ? nil : .unreachable)
+                    completion?(ok)
+                }
             }
         }
     }
@@ -274,12 +333,15 @@ public final class TrialManager {
 
     /// 带试用 token 的 POST。401(bad_trial_token，token 24h 过期)时自动 refreshFromServer 后重试一次。
     /// 回调给出原始 (Data?, HTTPURLResponse?, Error?)，由调用方解析（识别/润色各自的响应格式不同）。
-    public func trialPost(path: String, jsonBody: [String: Any], completion: @escaping (Data?, HTTPURLResponse?, Error?) -> Void) {
-        sendTrialPost(path: path, jsonBody: jsonBody, attempt: 1, completion: completion)
+    /// - Parameter onTask: 每发出一个请求（含 401 换令牌后重发的那一次）都先把任务交给调用方登记，调用方取消时能真正掐断连接
+    ///   （体检 优3）。在任务启动前调用；调用方当场 cancel 也安全（请求不会发出，completion 收到「已取消」）。不传时行为不变。
+    public func trialPost(path: String, jsonBody: [String: Any], onTask: ((URLSessionTask) -> Void)? = nil,
+                          completion: @escaping (Data?, HTTPURLResponse?, Error?) -> Void) {
+        sendTrialPost(path: path, jsonBody: jsonBody, attempt: 1, onTask: onTask, completion: completion)
     }
 
     /// trialPost 的内部实现：attempt 用于限制 401 刷新重试只发生一次。
-    private func sendTrialPost(path: String, jsonBody: [String: Any], attempt: Int,
+    private func sendTrialPost(path: String, jsonBody: [String: Any], attempt: Int, onTask: ((URLSessionTask) -> Void)?,
                               completion: @escaping (Data?, HTTPURLResponse?, Error?) -> Void) {
         guard let base = apiBase, let url = URL(string: base + path) else {
             completion(nil, nil, URLError(.badURL))
@@ -293,7 +355,7 @@ public final class TrialManager {
         req.httpBody = try? JSONSerialization.data(withJSONObject: jsonBody)
 
         // TrialManager 是共享单例，self 不会被释放，强持有 self 安全。
-        session.dataTask(with: req) { data, response, error in
+        let task = session.dataTask(with: req) { data, response, error in
             let http = response as? HTTPURLResponse
             // 403 trial_expired：两次握手之间到期了，立刻标记，别等下次打开主窗口
             if http?.statusCode == 403,
@@ -308,22 +370,27 @@ public final class TrialManager {
                let json = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any],
                (json["code"] as? String) == "bad_trial_token" {
                 self.refreshFromServer { _ in
-                    self.sendTrialPost(path: path, jsonBody: jsonBody, attempt: 2, completion: completion)
+                    self.sendTrialPost(path: path, jsonBody: jsonBody, attempt: 2, onTask: onTask, completion: completion)
                 }
                 return
             }
             completion(data, http, error)
-        }.resume()
+        }
+        onTask?(task)
+        task.resume()
     }
 
     /// 会员托管通道 POST（/member/*，X-Member-Token）。401 bad_member_token（令牌过期或已换新）时
     /// 找激活服务换新令牌后重试一次。
+    /// onTask：同 trialPost（含换令牌后重发的那一次）。
     public func memberPost(path: String, jsonBody: [String: Any], timeout: TimeInterval = 60,
+                           onTask: ((URLSessionTask) -> Void)? = nil,
                            completion: @escaping (Data?, HTTPURLResponse?, Error?) -> Void) {
-        sendMemberPost(path: path, jsonBody: jsonBody, timeout: timeout, attempt: 1, completion: completion)
+        sendMemberPost(path: path, jsonBody: jsonBody, timeout: timeout, attempt: 1, onTask: onTask, completion: completion)
     }
 
     private func sendMemberPost(path: String, jsonBody: [String: Any], timeout: TimeInterval, attempt: Int,
+                                onTask: ((URLSessionTask) -> Void)?,
                                 completion: @escaping (Data?, HTTPURLResponse?, Error?) -> Void) {
         guard let base = apiBase, let url = URL(string: base + path) else {
             completion(nil, nil, URLError(.badURL))
@@ -336,7 +403,7 @@ public final class TrialManager {
         req.timeoutInterval = timeout
         req.httpBody = try? JSONSerialization.data(withJSONObject: jsonBody)
 
-        session.dataTask(with: req) { data, response, error in
+        let task = session.dataTask(with: req) { data, response, error in
             let http = response as? HTTPURLResponse
             if attempt == 1, http?.statusCode == 401,
                let data = data,
@@ -351,21 +418,25 @@ public final class TrialManager {
                         completion(body, resp, nil)
                         return
                     }
-                    self.sendMemberPost(path: path, jsonBody: jsonBody, timeout: timeout, attempt: 2, completion: completion)
+                    self.sendMemberPost(path: path, jsonBody: jsonBody, timeout: timeout, attempt: 2, onTask: onTask, completion: completion)
                 }
                 return
             }
             completion(data, http, error)
-        }.resume()
+        }
+        onTask?(task)
+        task.resume()
     }
 
     /// 按通道发 POST：endpoint 传不带前缀的端点名（"asr" / "polish"）。
     /// timeout 只对会员生效（会员识别走 2.0 异步接口，长录音要多等）；试用沿用 trialPost 的固定超时。
+    /// onTask：把发出的请求交给调用方登记，取消时能掐断（见 trialPost）。不传时行为不变。
     public func hostedPost(route: HostedRoute, endpoint: String, jsonBody: [String: Any], timeout: TimeInterval = 60,
+                           onTask: ((URLSessionTask) -> Void)? = nil,
                            completion: @escaping (Data?, HTTPURLResponse?, Error?) -> Void) {
         switch route {
-        case .member: memberPost(path: "/member/\(endpoint)", jsonBody: jsonBody, timeout: timeout, completion: completion)
-        case .trial:  trialPost(path: "/trial/\(endpoint)", jsonBody: jsonBody, completion: completion)
+        case .member: memberPost(path: "/member/\(endpoint)", jsonBody: jsonBody, timeout: timeout, onTask: onTask, completion: completion)
+        case .trial:  trialPost(path: "/trial/\(endpoint)", jsonBody: jsonBody, onTask: onTask, completion: completion)
         case .none:   completion(nil, nil, URLError(.userAuthenticationRequired))
         }
     }
@@ -388,14 +459,19 @@ public final class TrialManager {
                 completion(.failure(error))
                 return
             }
-            guard let data = data,
-                  let json = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any],
-                  (response as? HTTPURLResponse)?.statusCode == 200 else {
-                completion(.failure(URLError(.badServerResponse)))
+            let statusCode = (response as? HTTPURLResponse)?.statusCode
+            let json = data.flatMap { (try? JSONSerialization.jsonObject(with: $0)) as? [String: Any] }
+            guard let json, statusCode == 200 else {
+                // 非 200：服务器的 { error: "中文原话", code } 带回去，别一律当网络坏（体检 修3）
+                completion(.failure(StartFailureError(failure: Self.startFailure(statusCode: statusCode, json: json))))
                 return
             }
             completion(.success(json))
         }.resume()
+    }
+
+    private struct StartFailureError: Error {
+        let failure: StartFailure
     }
 }
 

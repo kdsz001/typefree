@@ -148,6 +148,11 @@ final class ChunkedASRCoordinator {
             let merged = Array(samples[lo..<hi])
             transcribeChunk(neighbor, merged) { result in
                 self.queue.async {
+                    // 调用方取消了：剩下的段不再恢复，整体按失败收尾（优3）
+                    if case .failure(let error) = result, CloudASRTranscriber.isCancellation(error) {
+                        self.finish(with: .failure(error))
+                        return
+                    }
                     if case .success(let text) = result, !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                         self.results[neighbor] = text
                         self.results[i] = ""   // 内容已并入 neighbor

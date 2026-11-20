@@ -39,6 +39,8 @@ final class AnswerPanel {
     var onFollowUpStart: (() -> Bool)?
     /// 续聊松手（cancelled = 拖开取消）
     var onFollowUpEnd: ((_ cancelled: Bool) -> Void)?
+    /// 面板收起时最后一轮回答还没出完（还在思考 / 出字中）：主程序据此作废这次回答
+    var onHideWhileAnswering: (() -> Void)?
 
     var isVisible: Bool { panel?.isVisible ?? false }
     /// 当前话题 id（写历史用；新话题换新 id）
@@ -117,6 +119,7 @@ final class AnswerPanel {
 
     func hide() {
         guard let panel, panel.isVisible else { return }
+        if let last = model.turns.last, last.state == .thinking || last.state == .streaming { onHideWhileAnswering?() }
         removeEscMonitor()
         removeMouseUpMonitor()
         removeOutsideClickMonitor()

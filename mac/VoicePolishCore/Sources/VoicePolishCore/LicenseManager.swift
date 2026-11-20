@@ -131,12 +131,26 @@ public final class LicenseManager {
         return max(0, Int((t - now.timeIntervalSince1970) / 86400))
     }
 
-    /// 会员已到期：服务器明确说到期，或本地时钟已过到期时刻。
+    /// 会员到期后的宽限天数。⚠ 必须和激活服务 license-worker/src/member.js 的 GRACE_DAYS 保持一致：
+    /// 自动续费的扣款回执（Paddle webhook）可能晚到几个小时，宽限期内服务器仍算有效（expired=false）、照常签令牌。
+    public static let memberGraceDays: Double = 3
+
+    /// 本地判断会员是否已到期（纯函数，便于单测）：以服务器返回的 expired 为准（它已算上宽限）；
+    /// 服务器没说过期时，本地时钟过了「到期 + 宽限」才兜底判到期（断网好几天的情况）。
+    /// 体检 优7：以前到期那一刻就判到期，自动续费会员在续费回执到达前最长约 6 小时被拦。
+    public static func isMemberExpired(serverSaysExpired: Bool, expiresAt: TimeInterval?, now: TimeInterval) -> Bool {
+        if serverSaysExpired { return true }
+        guard let expiresAt else { return false }
+        return now >= expiresAt + memberGraceDays * 86_400
+    }
+
+    /// 会员已到期：服务器明确说到期，或本地时钟已过「到期 + 宽限」。
+    /// 宽限期内不判到期：能不能走托管通道照旧看会员令牌（hasActiveMembership），没有可用令牌时由调用方找服务器复核。
     public func isMemberExpired(now: Date = Date()) -> Bool {
         guard isMember else { return false }
-        if defaults.bool(forKey: kExpired) { return true }
-        if let s = defaults.string(forKey: kExpiresAt), let t = Self.parseUTC(s) { return now.timeIntervalSince1970 >= t }
-        return false
+        return Self.isMemberExpired(serverSaysExpired: defaults.bool(forKey: kExpired),
+                                    expiresAt: defaults.string(forKey: kExpiresAt).flatMap(Self.parseUTC),
+                                    now: now.timeIntervalSince1970)
     }
 
     /// 可用的会员令牌（没过期才给），托管通道请求头用。
@@ -350,33 +364,90 @@ public final class LicenseManager {
     /// 立刻找服务器复核一次（不看间隔）：会员令牌缺失/被托管通道拒绝时用。
     /// 同一时刻只发一个、60 秒内最多一次；completion 在主线程回调，true = 拿到了有效结果。
     public func revalidateNow(now: Date = Date(), completion: ((Bool) -> Void)? = nil) {
+        revalidateWithOutcome(now: now) { completion?($0 == .valid) }
+    }
+
+    /// 一次立刻复核的结果（体检 优10：被 60 秒节流挡住时，别再当成「连不上」报给用户）
+    public enum RevalidationOutcome: Equatable {
+        /// 服务器确认有效，会员信息已更新
+        case valid
+        /// 服务器明确说失效（退款 / 被重置），本机已退出激活；或本机根本没激活
+        case invalid
+        /// 没联上 / 服务器出错 / 看不懂答复：本地什么都不动
+        case unreachable
+        /// 这次没发请求：上一次还在路上（inFlight），或 60 秒内刚问过（lastUnreachable = 上一次是不是没联上）
+        case throttled(inFlight: Bool, lastUnreachable: Bool)
+    }
+
+    /// 上一次立刻复核是不是没联上（节流时据此判断要不要提示网络问题）
+    private var lastRevalidationUnreachable = false
+
+    /// 同 revalidateNow，但把结果分清楚告诉调用方（主线程回调）。
+    public func revalidateWithOutcome(now: Date = Date(), completion: ((RevalidationOutcome) -> Void)? = nil) {
         guard isActivated, let code = defaults.string(forKey: kKey) else {
-            DispatchQueue.main.async { completion?(false) }
+            DispatchQueue.main.async { completion?(.invalid) }
             return
         }
         stateLock.lock()
-        let throttled = revalidating || now.timeIntervalSince1970 - lastForcedAttempt < 60
+        let inFlight = revalidating
+        let throttled = inFlight || now.timeIntervalSince1970 - lastForcedAttempt < 60
+        let lastUnreachable = lastRevalidationUnreachable
         if !throttled { revalidating = true; lastForcedAttempt = now.timeIntervalSince1970 }
         stateLock.unlock()
         if throttled {
-            DispatchQueue.main.async { completion?(false) }
+            DispatchQueue.main.async { completion?(.throttled(inFlight: inFlight, lastUnreachable: lastUnreachable)) }
             return
         }
         post(path: "/validate", body: ["code": code, "device_id": deviceID()]) { [weak self] result in
             guard let self = self else { return }
-            self.stateLock.lock(); self.revalidating = false; self.stateLock.unlock()
-            var ok = false
+            var outcome = RevalidationOutcome.unreachable
             if case .success(let json) = result {   // 失败 = 沉默不杀
                 switch Self.revalidationVerdict(json) {
                 case true?:
                     self.defaults.set(now.timeIntervalSince1970, forKey: self.kLastValidated)
                     self.applyMembership(MembershipInfo.parse(json))
-                    ok = true
-                case false?: self.clearLocal()
-                case nil:    break
+                    outcome = .valid
+                case false?:
+                    self.clearLocal()
+                    outcome = .invalid
+                case nil:
+                    break
                 }
             }
-            DispatchQueue.main.async { completion?(ok) }
+            self.stateLock.lock()
+            self.revalidating = false
+            self.lastRevalidationUnreachable = outcome == .unreachable
+            self.stateLock.unlock()
+            DispatchQueue.main.async { completion?(outcome) }
+        }
+    }
+
+    public static let revalidationUnreachableHint = "无法连接激活服务，请检查网络后再试"
+    public static let memberExpiredHint = "会员已到期 · 续费，或在「设置 → 模型」填自己的 Key"
+    /// 服务器说会员有效、却没给能用的令牌（如旧版激活服务在到期宽限内签的令牌一出生就过期）：托管通道这会儿用不了
+    public static let memberChannelUnavailableHint = "会员服务暂时用不了，请稍后再试，或在「设置 → 模型」填自己的 Key"
+
+    /// 按下快捷键时发现会员没有可用令牌、立刻复核之后，要补哪句提示（纯函数，便于单测）。nil = 不补，
+    /// 「正在验证会员状态，请稍候…」那句就是对的。
+    /// - 这次没联上，或被节流且 60 秒内上一次没联上 → 「检查网络」
+    /// - 上一次还在路上 → 不补，结果马上回来
+    /// - 服务器确认有效：已到期（已含 3 天宽限）→「会员已到期」；有可用令牌 → 不补；没有 →「暂时用不了」
+    /// - 被节流、上一次联上了：上一次就没拿到可用令牌（拿到了就不会走到复核）→「暂时用不了」
+    /// - 服务器明确说失效：本机已退出激活，不说网络
+    public static func revalidationHint(after outcome: RevalidationOutcome,
+                                        memberExpired: Bool, hasActiveMembership: Bool) -> String? {
+        switch outcome {
+        case .unreachable:
+            return revalidationUnreachableHint
+        case .throttled(let inFlight, let lastUnreachable):
+            if inFlight { return nil }
+            if lastUnreachable { return revalidationUnreachableHint }
+            return hasActiveMembership ? nil : memberChannelUnavailableHint
+        case .valid:
+            if memberExpired { return memberExpiredHint }
+            return hasActiveMembership ? nil : memberChannelUnavailableHint
+        case .invalid:
+            return nil
         }
     }
 
@@ -426,7 +497,8 @@ public final class LicenseManager {
 
         session.dataTask(with: req) { data, response, error in
             if let error = error {
-                completion(.failure(.network(error.localizedDescription)))
+                // 界面显示「激活失败：…」：系统原话是英文、可能带网址，换成中文短句（体检 修4）
+                completion(.failure(.network(UserFacingError.message(for: error, fallback: "网络出错，请稍后再试"))))
                 return
             }
             guard let data = data,

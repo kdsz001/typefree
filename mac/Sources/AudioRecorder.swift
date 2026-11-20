@@ -15,6 +15,13 @@ class AudioRecorder {
     private var hasRegisteredConfigObserver = false
     private var needsEngineRebuild = true
     private var isReconfiguringEngine = false
+    /// 录音中换了设备、重启采集失败后 1 秒内也没再恢复时回调（主线程，参数是失败原因）：
+    /// 录音还「开着」，但已经收不到声音了。以前只写系统日志，用户毫不知情（体检 优10）。
+    var onCaptureInterrupted: ((String) -> Void)?
+    /// 最近一次录音中重启采集失败、还没恢复（只在主线程读写）
+    private var captureRestartFailed = false
+    /// 最近一次录音启动失败的系统原话（英文 + OSStatus 数字）：不给用户看，App 写进自己的日志，排查工单用
+    private(set) var lastStartFailureDetail: String?
 
     /// Call at app launch to register for route/config changes.
     func prepare() {
@@ -49,9 +56,22 @@ class AudioRecorder {
             guard let self = self, self.isCapturing else { return }
             do {
                 try self.restartCapture()
+                self.captureRestartFailed = false
             } catch {
                 NSLog("[AudioRecorder] Failed to restart after microphone change: %@", error.localizedDescription)
+                self.noteCaptureRestartFailed(error)
             }
+        }
+    }
+
+    /// 重启采集失败：拔麦克风时「设备变了」「选择变了」「默认设备变了」几条通知会接连来，前一次失败、后一次接上很常见，
+    /// 所以等 1 秒，那时还没接上（且还在录）才告诉上层。主线程调用。
+    private func noteCaptureRestartFailed(_ error: Error) {
+        captureRestartFailed = true
+        let reason = error.localizedDescription
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
+            guard let self, self.isCapturing, self.captureRestartFailed else { return }
+            self.onCaptureInterrupted?(reason)
         }
     }
 
@@ -144,9 +164,11 @@ class AudioRecorder {
             guard let self = self, self.isCapturing else { return }
             do {
                 try self.restartCapture()
+                self.captureRestartFailed = false
                 NSLog("[AudioRecorder] Capture restarted after config change")
             } catch {
                 NSLog("[AudioRecorder] Failed to restart after config change: %@", error.localizedDescription)
+                self.noteCaptureRestartFailed(error)
             }
         }
     }
@@ -175,6 +197,7 @@ class AudioRecorder {
         bufferQueue.sync {
             self.rawBuffers.removeAll(keepingCapacity: true)
         }
+        captureRestartFailed = false
         isCapturing = true
         do {
             if MicrophoneManager.shared.selectedUID == MicrophoneManager.systemDefaultUID {
@@ -191,9 +214,9 @@ class AudioRecorder {
             levelCallback = nil
             teardownEngine()
             stopAUHAL()
-            let msg = error.localizedDescription
-            NSLog("[AudioRecorder] Failed to start recording: %@", msg)
-            return msg
+            NSLog("[AudioRecorder] Failed to start recording: %@", error.localizedDescription)
+            lastStartFailureDetail = error.localizedDescription
+            return Self.startFailureMessage(for: error)
         }
     }
 
@@ -481,6 +504,15 @@ class AudioRecorder {
         let status = AudioObjectGetPropertyData(deviceID, &address, 0, nil, &size, &sampleRate)
         guard status == noErr, sampleRate > 0 else { return nil }
         return sampleRate
+    }
+
+    /// 录音启动失败时给用户看的话（界面显示「录音启动失败：…」）。系统原话多是英文加 OSStatus 数字，只进日志（体检 修4）
+    private static func startFailureMessage(for error: Error) -> String {
+        switch error as? RecorderError {
+        case .selectedDeviceUnavailable?: return "选中的麦克风不可用（可能已拔掉），请在「设置」里换一个"
+        case .engineUnavailable?: return "麦克风没准备好，请检查输入设备"
+        default: return "麦克风打不开，请检查输入设备或稍后再试"
+        }
     }
 
     private func check(_ status: OSStatus, _ operation: String) throws {

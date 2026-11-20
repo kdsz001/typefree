@@ -1,5 +1,6 @@
 import Cocoa
 import ApplicationServices
+import WebKit
 
 class TextDelivery {
     enum DeliveryResult: Equatable {
@@ -174,7 +175,7 @@ class TextDelivery {
     /// 所以先把网页内容整片排除掉，剩下的原生控件才按角色判。
     func focusKind() -> FocusKind {
         guard let pid = NSWorkspace.shared.frontmostApplication?.processIdentifier else { return .unknown }
-        if pid == ProcessInfo.processInfo.processIdentifier { return .unknown }   // 自家窗口（引导/工单输入框）不掺和
+        if pid == ProcessInfo.processInfo.processIdentifier { return ownWindowFocusKind() }
         let app = AXUIElementCreateApplication(pid)
         AXUIElementSetMessagingTimeout(app, Self.axTimeout)   // 对方 App 卡住时不能拖住出字
         var focused: AnyObject?
@@ -206,6 +207,27 @@ class TextDelivery {
         case .undetermined:
             return .unknown
         }
+    }
+
+    /// Typefree 自己的窗口在最前（设置窗、工单、引导…）：不走辅助功能，直接看 AppKit 的第一响应者。
+    /// 体检 优6：以前一律当「判断不出」照常粘贴并还原剪贴板——焦点不在输入框时字没贴上、剪贴板又被还原，什么都没留下。
+    /// 现在明确不是输入框（或根本没有前台窗口）就按「不能输入」走：剪贴板留着文字，由调用方提示按 ⌘V。
+    /// 网页里的输入框（新功能引导的「试一试」）从外面看不出来，照老行为走。
+    private func ownWindowFocusKind() -> FocusKind {
+        guard let window = NSApp.keyWindow else {
+            debugLog?("TextDelivery: 自家 App 在最前但没有前台窗口")
+            return .notEditable
+        }
+        let responder = window.firstResponder
+        var view = responder as? NSView
+        while let current = view {
+            if current is WKWebView { return .unknown }
+            view = current.superview
+        }
+        // 输入框正在编辑时，第一响应者是它的字段编辑器（NSTextView）
+        if let textView = responder as? NSTextView, textView.isEditable { return .editable }
+        debugLog?("TextDelivery: 自家窗口焦点不在输入框（\(responder.map { String(describing: type(of: $0)) } ?? "nil")）")
+        return .notEditable
     }
 
     /// 能往里打字的迹象：输入框角色、值可写、或（网页里）带可编辑祖先标记。

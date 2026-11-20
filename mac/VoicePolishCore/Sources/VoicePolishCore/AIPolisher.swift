@@ -608,7 +608,8 @@ public class AIPolisher {
         debugLog?("Cloud ASR polish: \(route == .member ? "MEMBER" : "TRIAL") via proxy, model=\(model)")
         let log = debugLog
         TrialManager.shared.hostedPost(route: route, endpoint: "polish", jsonBody: body) { data, response, error in
-            if let error = error { completion(.failure(error)); return }
+            // 网络错误包一层中文：系统原话里带试用服务器的网址 / IP
+            if let error = error { completion(.failure(UserFacingError.wrappingNetworkError(error))); return }
             let status = response?.statusCode ?? 0
             if status == 200,
                let data = data,
@@ -616,6 +617,11 @@ public class AIPolisher {
                let choices = json["choices"] as? [[String: Any]],
                let message = choices.first?["message"] as? [String: Any],
                let content = message["content"] as? String {
+                if let first = choices.first, Self.isTruncatedByLength(first) {
+                    log?("Hosted polish truncated by length, fallback to raw")
+                    completion(.failure(PolishError.outputTruncated))
+                    return
+                }
                 completion(.success(content.trimmingCharacters(in: .whitespacesAndNewlines)))
                 return
             }
@@ -623,7 +629,7 @@ public class AIPolisher {
             let errJson = (try? JSONSerialization.jsonObject(with: data ?? Data())) as? [String: Any]
             let expired = (errJson?["code"] as? String) == "trial_expired" || (errJson?["expired"] as? Bool) == true
             let msg = expired ? "试用已结束 · 开通会员，或填自己的 Key"
-                : Self.extractAPIErrorMessage(from: errJson) ?? (route == .member ? "会员润色失败（\(status)）" : "试用润色失败（\(status)）")
+                : Self.hostedErrorMessage(status: status, json: errJson) ?? (route == .member ? "会员润色失败（\(status)）" : "试用润色失败（\(status)）")
             log?("Hosted polish failed: \(msg)")
             completion(.failure(PolishError.apiError(msg)))
         }
@@ -631,7 +637,7 @@ public class AIPolisher {
 
     // MARK: - HTTP 调用
 
-    private func callChatCompletionsWithTokens(url: URL, apiKey: String, body: [String: Any], completion: @escaping (Result<(String, Int, Int), Error>) -> Void) {
+    func callChatCompletionsWithTokens(url: URL, apiKey: String, body: [String: Any], completion: @escaping (Result<(String, Int, Int), Error>) -> Void) {
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
@@ -647,7 +653,7 @@ public class AIPolisher {
 
         URLSession.shared.dataTask(with: request) { data, response, error in
             if let error = error {
-                completion(.failure(error))
+                completion(.failure(UserFacingError.wrappingNetworkError(error)))
                 return
             }
 
@@ -663,6 +669,11 @@ public class AIPolisher {
                    let firstChoice = choices.first,
                    let message = firstChoice["message"] as? [String: Any],
                    let content = message["content"] as? String {
+                    // 输出被长度上限截断：半截稿不能当成完整结果悄悄打出去，按润色失败走（上层输出原文并提示）
+                    if Self.isTruncatedByLength(firstChoice) {
+                        completion(.failure(PolishError.outputTruncated))
+                        return
+                    }
                     let usage = json["usage"] as? [String: Any]
                     let inputTokens = usage?["prompt_tokens"] as? Int ?? 0
                     let outputTokens = usage?["completion_tokens"] as? Int ?? 0
@@ -749,7 +760,7 @@ public class AIPolisher {
                                            "result_format": "message", "enable_thinking": false, "enable_search": true]
                 if Self.isTimeSensitive(question) { body["search_options"] = ["forced_search": true] }
                 TrialManager.shared.hostedPost(route: hostedRoute, endpoint: "polish", jsonBody: body) { data, response, error in
-                    if let error { completion(.failure(error)); return }
+                    if let error { completion(.failure(UserFacingError.wrappingNetworkError(error))); return }
                     if let data, (response?.statusCode ?? 0) == 200,
                        let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
                        let content = ((json["choices"] as? [[String: Any]])?.first?["message"] as? [String: Any])?["content"] as? String {
@@ -758,7 +769,8 @@ public class AIPolisher {
                         completion(.success(text))
                     } else {
                         let errJson = (try? JSONSerialization.jsonObject(with: data ?? Data())) as? [String: Any]
-                        completion(.failure(PolishError.apiError(Self.extractAPIErrorMessage(from: errJson) ?? "问答请求失败（\(response?.statusCode ?? 0)）")))
+                        let status = response?.statusCode ?? 0
+                        completion(.failure(PolishError.apiError(Self.hostedErrorMessage(status: status, json: errJson) ?? "问答请求失败（\(status)）")))
                     }
                 }
                 return
@@ -885,7 +897,7 @@ public class AIPolisher {
             defer { self.session?.finishTasksAndInvalidate() }
             guard !finished else { return }
             finished = true
-            if let error { completion(.failure(error)); return }
+            if let error { completion(.failure(UserFacingError.wrappingNetworkError(error))); return }
             guard statusCode == 200 else {
                 let json = try? JSONSerialization.jsonObject(with: errorBody) as? [String: Any]
                 let message = AIPolisher.extractAPIErrorMessage(from: json) ?? "HTTP \(statusCode)"
@@ -1062,17 +1074,25 @@ public class AIPolisher {
         case apiError(String)   // 服务端返回的业务错误（鉴权/限流等），带真实原因
         case quotaExhausted(String)   // 403 额度类失败（免费额度用完即停/欠费），自动路由靠它降级
         case modelUnavailable(String) // 403 但不是额度问题（模型未开通 / Key 无此模型权限），也降级，但短冷却、如实报原因
+        case outputTruncated          // 输出撞到长度上限被截断（finish_reason=length）：不能把半截稿当完整结果
 
         public var errorDescription: String? {
             switch self {
             case .noAPIKey: return "未配置润色模型的 API key"
             case .noData: return "润色服务未返回数据"
             case .parseError: return "润色返回无法解析"
-            case .apiError(let msg): return msg
-            case .quotaExhausted(let msg): return msg
-            case .modelUnavailable(let msg): return "模型未开通或无权限：\(msg)"
+            case .outputTruncated: return "这段太长，润色没能写完"
+            case .apiError(let msg): return UserFacingError.sanitized(msg, fallback: "润色服务出错")
+            case .quotaExhausted(let msg): return UserFacingError.sanitized(msg, fallback: "润色服务出错")
+            case .modelUnavailable(let msg): return "模型未开通或无权限：\(UserFacingError.sanitized(msg, fallback: "请到服务商控制台查看"))"
             }
         }
+    }
+
+    /// 这一条输出是不是因为长度上限被截断。千问（兼容模式）、豆包（方舟）、智谱都按 OpenAI 格式回
+    /// choices[0].finish_reason，被 max_tokens 截断时是 "length"。
+    static func isTruncatedByLength(_ choice: [String: Any]) -> Bool {
+        (choice["finish_reason"] as? String)?.lowercased() == "length"
     }
 
     /// 403 分两种：额度/欠费（当天不会恢复，长冷却）与模型未开通/无权限（用户开通后立刻可用，短冷却）。
@@ -1090,24 +1110,35 @@ public class AIPolisher {
             ? .quotaExhausted(message) : .modelUnavailable(message)
     }
 
+    /// 托管通道（试用 / 会员）非 200 时给用户看的话（优5）。
+    /// 服务器自己的拦截（额度用完、过期、限流…）是 {"error": "中文", "code": …}，原话照用；
+    /// 其余是上游（千问）原样转回来的错误：401/403 或 Key 无效 / 欠费，都是池里 Key 的问题、跟用户自己的 Key 无关，
+    /// 统一说「服务暂时不可用」，不让他去「检查 API Key」「到服务商控制台」。
+    static func hostedErrorMessage(status: Int, json: [String: Any]?) -> String? {
+        if json?["error"] is String { return extractAPIErrorMessage(from: json) }
+        if status == 401 || status == 403 { return UserFacingError.hostedServiceUnavailable }
+        return extractAPIErrorMessage(from: json, hosted: true)
+    }
+
     /// 从 OpenAI 兼容 / DashScope 的错误响应里取人话原因：
     /// 兼容 {"error":{"message":...}}、{"message":...,"code":...}、{"error":"..."}。
-    static func extractAPIErrorMessage(from json: [String: Any]?) -> String? {
+    /// hosted：错误来自试用 / 会员通道背后的池子 Key（见 friendlyProviderError）。
+    static func extractAPIErrorMessage(from json: [String: Any]?, hosted: Bool = false) -> String? {
         guard let json = json else { return nil }
         if let err = json["error"] as? [String: Any] {
             let code = err["code"] as? String
             let type = err["type"] as? String
             let m = err["message"] as? String
-            if let friendly = friendlyProviderError(code: code, type: type, message: m) { return friendly }
+            if let friendly = friendlyProviderError(code: code, type: type, message: m, hosted: hosted) { return friendly }
             if let m = m, !m.isEmpty { return m }
             if let c = code, !c.isEmpty { return c }
         }
         if let err = json["error"] as? String, !err.isEmpty {
-            return friendlyProviderError(code: nil, type: nil, message: err) ?? err
+            return friendlyProviderError(code: nil, type: nil, message: err, hosted: hosted) ?? err
         }
         if let m = json["message"] as? String, !m.isEmpty {
             let code = json["code"] as? String
-            if let friendly = friendlyProviderError(code: code, type: nil, message: m) { return friendly }
+            if let friendly = friendlyProviderError(code: code, type: nil, message: m, hosted: hosted) { return friendly }
             if let code = code, !code.isEmpty { return "\(m)（\(code)）" }
             return m
         }
@@ -1118,7 +1149,8 @@ public class AIPolisher {
     /// 依据实测原文：百炼 Key 错 → code=invalid_api_key "Incorrect API key provided…"；
     /// 火山 Ark Key 错 → code=AuthenticationError "The API key format is incorrect…"；
     /// 百炼欠费 → code=Arrearage "…account is in good standing"；火山 Ark 欠费 → AccountOverdueError。
-    static func friendlyProviderError(code: String?, type: String?, message: String?) -> String? {
+    /// hosted：走试用 / 会员通道时 Key 是服务器池子里的，Key 无效 / 欠费改说「服务暂时不可用」（优5）。
+    static func friendlyProviderError(code: String?, type: String?, message: String?, hosted: Bool = false) -> String? {
         let c = (code ?? "").lowercased()
         let t = (type ?? "").lowercased()
         let m = (message ?? "").lowercased()
@@ -1127,12 +1159,12 @@ public class AIPolisher {
         if c == "invalid_api_key" || c == "invalidapikey" || c == "authenticationerror" || t == "unauthorized"
             || m.contains("incorrect api key") || m.contains("api key format is incorrect")
             || m.contains("didn't provide an api key") || m.contains("invalid api key") {
-            return "API Key 无效，请检查是否复制完整\(tag)"
+            return hosted ? UserFacingError.hostedServiceUnavailable : "API Key 无效，请检查是否复制完整\(tag)"
         }
         if c == "arrearage" || c == "accountoverdueerror" || c == "insufficient_quota"
             || m.contains("in good standing") || m.contains("arrearage") || m.contains("overdue")
             || m.contains("quota exceeded") || m.contains("enough balance") {
-            return "账号欠费或免费额度已用完，请到服务商控制台检查\(tag)"
+            return hosted ? UserFacingError.hostedServiceUnavailable : "账号欠费或免费额度已用完，请到服务商控制台检查\(tag)"
         }
         if c == "quotaexceeded" || c == "ratelimitexceeded" || c == "throttling" || c.hasPrefix("throttling.")
             || c == "limit_requests" || m.contains("rate limit") || m.contains("too many requests") {

@@ -937,7 +937,9 @@ private final class TypefreeUpdateUserDriver: NSObject, SPUUserDriver {
 
     func showUpdaterError(_ error: Error, acknowledgement: @escaping () -> Void) {
         acknowledgement()
-        let message = (error as NSError).localizedDescription
+        // 更新框里显示的原因：网络错误翻成中文短句；Sparkle 自己的说明照用，但去掉夹带的网址 / IP / 系统调试串（体检 修4）
+        let message = UserFacingError.networkMessage(for: error)
+            ?? UserFacingError.sanitized((error as NSError).localizedDescription, fallback: "暂时检查不了更新，请稍后再试")
         updateInfo = TypefreeUpdateInfo(
             title: "更新检查失败",
             displayVersion: "",
@@ -1259,6 +1261,12 @@ class AppDelegate: NSObject, NSApplicationDelegate, SettingsWindowDelegate, SPUU
     private var askSpeechDetector = AskSpeechDetector()
     /// 长按问 AI 这次录音的开始时刻：没判出开口就松手时，不足 1 秒的按住当误触丢掉
     private var askRecordingStartedAt: Date?
+    /// 问 AI 的回答正在出（问题已识别完）。体检 修6：这段时间不再占「处理中」，听写照常能开始；
+    /// 面板上的 Esc / × / 面板收起 / 问新问题会中止它（全局 Esc 不拦）。
+    /// AIPolisher.answer 目前没有取消接口，中止 = 丢掉之后到的片段和结果。
+    private var askAnswerInFlight = false
+    /// 每发起一次回答 +1，中止时也 +1：晚到的片段 / 结果对不上号就丢掉，不会写进下一轮
+    private var askAnswerGeneration = 0
     private let answerPanel = AnswerPanel()
     var textDelivery: TextDelivery!
     var pipeline: VoicePolishPipeline!
@@ -1328,6 +1336,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SettingsWindowDelegate, SPUU
         return interceptor
     }()
     /// 工单 #1019：录音期间 Esc 取消；工单 #1024：识别 / 整理中（文字还没打出来）也能按 Esc 取消。按键都不传给前台 App。
+    /// 问 AI 的回答在出时不拦全局 Esc（Esc 照常交给前台 App）：停回答用面板上的 Esc / ×。
     private var escapeInterceptorWanted = false
     private func updateEscapeInterceptor() {
         let wanted = isRecording || processingSamples != nil
@@ -1347,14 +1356,28 @@ class AppDelegate: NSObject, NSApplicationDelegate, SettingsWindowDelegate, SPUU
     private var recognitionWatchdog: DispatchWorkItem?
     /// 这次边录边发的会话：等太久放弃时，先把已识别出的前半段交给用户
     private var processingSession: StreamingTranscriptionSession?
+    /// 润色阶段的总等待封顶（体检 优10）：到点让流水线放弃润色、先出原文，照现有方式提醒没润色
+    private var polishWatchdog: DispatchWorkItem?
     /// 只识别出了前半段：出字后提醒一次（后半截以前会悄悄丢掉）
     private var pendingPartialHint: String?
     private static let partialResultHint = "后半段没识别出来 · 整段录音在历史里，可点「···」→「重试」"
     /// 这次录音放过开始提示音没有：结束音只跟在开始音后面放（长按问 AI 没判出开口时两个都不放）
     private var didPlayStartCue = false
+    /// 这次录音真正开始收音的时刻：一帧都没采到时，按它算录了多久（体检 修1：说了很久却被判没声音要提示）
+    private var recordingStartedAt: Date?
+    /// 这次录音中换了麦克风、采集没接上：出字 / 收起时提醒一次（体检 优10）。开始新录音、取消、报错时清掉
+    private var pendingCaptureHint: String?
+    /// 这次录音开始时还在免费试用：处理时试用已到期，「未配置凭证」的报错要换成「试用已结束」（体检 优10）
+    private var recordingStartedInTrial = false
+    private var trialEndedDuringRecording: Bool {
+        RecordingFlowPolicy.trialEndedDuringRecording(startedInTrial: recordingStartedInTrial,
+                                                      trialExpiredNow: TrialManager.shared.trialExpired,
+                                                      ownKeyConfigured: cloudTranscriber.isConfigured(),
+                                                      activated: LicenseManager.shared.isActivated)
+    }
 
     /// 更新提醒弹窗要不要缓一缓：录音或出字过程中弹窗会抢焦点、打断用户。
-    func isBusyForUpdateReminder() -> Bool { isRecording || isProcessing }
+    func isBusyForUpdateReminder() -> Bool { isRecording || isProcessing || askAnswerInFlight }
     private let debugLogQueue = DispatchQueue(label: "com.voicepolish.debug-log", qos: .utility)
     private let debugLogMaxBytes: UInt64 = 2 * 1024 * 1024
     private let debugLogPrivacyMigrationKey = "debugLogPrivacyMigrationV1"
@@ -1528,6 +1551,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SettingsWindowDelegate, SPUU
         overlayWindow.onUndoCancel = { [weak self] in self?.redoCancelledRecording() }
         audioRecorder = AudioRecorder()
         audioRecorder.prepare()  // 只注册设备变更监听；引擎录音时才建，空闲不占系统音频设备
+        audioRecorder.onCaptureInterrupted = { [weak self] reason in self?.handleCaptureInterrupted(reason) }
         cloudTranscriber = CloudASRTranscriber()
         cloudTranscriber.debugLog = { [weak self] message in
             self?.debugLog(message)
@@ -1664,11 +1688,13 @@ class AppDelegate: NSObject, NSApplicationDelegate, SettingsWindowDelegate, SPUU
         }
         isRecording = true
         clearHintQueue()
+        pendingCaptureHint = nil
         debugLog("START recording")
         statusBar.setTitle("VP●")
 
         pendingOverlayHide?.cancel()   // 取消上一轮错误浮窗的延时隐藏，避免误杀本次录音浮窗
-        if !voiceQuestionMode, !answerPanel.isPinned { answerPanel.hide() }
+        // 问 AI 的回答还在出时开始听写：面板留着让它出完（收起面板 = 中止回答，用户没这个意思）
+        if !voiceQuestionMode, !answerPanel.isPinned, !askAnswerInFlight { answerPanel.hide() }
         // 问 AI 模式：蓝色光环，不显示语言标签；否则显示默认输出语言标签（防止忘了开着）
         overlayWindow.askGlow = voiceQuestionMode
         overlayWindow.languageTag = voiceQuestionMode ? nil : OutputLanguage.defaultLanguage()?.tag
@@ -1688,11 +1714,14 @@ class AppDelegate: NSObject, NSApplicationDelegate, SettingsWindowDelegate, SPUU
         if let errorMsg = errorMsg {
             isRecording = false
             statusBar.setTitle("VP")
+            debugLog("Recording failed to start: \(audioRecorder.lastStartFailureDetail ?? errorMsg)")
             showError("录音启动失败: \(errorMsg)")
             return false
         }
         // 工单 #1003：真正开始收音这一刻放开始音，用户听到就知道可以说了（也顺带缓解 #1008「说太快丢开头」）。
         // 结束和取消都响结束音。长按问 AI 在判出开口前可能是误触，两个都不出声。
+        recordingStartedAt = Date()
+        recordingStartedInTrial = TrialManager.shared.isInTrial
         didPlayStartCue = !askAwaitingSpeech && CuePlayer.shared.isEnabled
         if didPlayStartCue { CuePlayer.shared.play(.start); debugLog("Cue: start（\(CuePlayer.shared.style.rawValue)）") }
         // 托管通道录音封顶（owner 出识别费，防开着不动烧钱）：试用 5 分钟；会员 9 分 50 秒——服务器单条上限 10 分钟，
@@ -1713,11 +1742,12 @@ class AppDelegate: NSObject, NSApplicationDelegate, SettingsWindowDelegate, SPUU
 
     /// 边录边发：cloudOnly 模式下建流式会话，并每 3s 取样一次提交已说完的段落。
     /// omni（音频直喂大模型）与关闭开关时不启用，退化为松手后整段识别。
+    /// 问 AI 的录音也不启用（体检 优4）：松手后问题总是整段重新识别，录音中提交的段落用不上，白传一遍还计费。
     private func setupStreamingIfEligible() {
         streamingSession = nil
         streamingTimer?.invalidate()
         streamingTimer = nil
-        guard streamingEnabled, !processingMode.usesOmniDirectAudio else { return }
+        guard streamingEnabled, !processingMode.usesOmniDirectAudio, !voiceQuestionMode else { return }
 
         // 提交/尾巴都走同一识别版本（不跟随失败回退，保持简单）；试用/自带 key 路由由 transcribe 内部处理。
         let version = cloudTranscriber.currentVersion()
@@ -1769,15 +1799,16 @@ class AppDelegate: NSObject, NSApplicationDelegate, SettingsWindowDelegate, SPUU
         streamingTimer = nil
         let session = streamingSession
         streamingSession = nil
+        let recordedSeconds = recordingStartedAt.map { Date().timeIntervalSince($0) } ?? 0
 
         debugLog("Calling audioRecorder.stopRecording...")
         audioRecorder.stopRecording { [weak self] samples in
             guard let self = self else { return }
             self.debugLog("stopRecording callback: samples=\(samples?.count ?? -1)")
             guard let samples = samples, !samples.isEmpty else {
-                self.debugLog("No audio samples!")
+                self.debugLog("No audio samples! (recorded \(String(format: "%.1f", recordedSeconds))s)")
                 DispatchQueue.main.async {
-                    self.recordEmptyResult()
+                    self.recordEmptyResult(samples: nil, recordedSeconds: recordedSeconds)
                 }
                 return
             }
@@ -1816,7 +1847,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, SettingsWindowDelegate, SPUU
                     case .failure(let error as StreamingTranscriptionSession.PartialResultError):
                         // 尾巴两次没识别出来：前半段照常出字，并提醒后半段没出来（整段录音随这条记录进历史，可重试）
                         self.debugLog("Streaming tail failed: \(error.underlying) — delivering first part (\(error.text.count) chars)")
-                        self.pendingPartialHint = Self.partialResultHint
+                        // 试用正好在这次录音里到期：后半段是因为试用结束才没识别，重试也没用，照实说
+                        let trialEnded = self.trialEndedDuringRecording && RecordingFlowPolicy.isMissingCredentials(error.underlying)
+                        self.pendingPartialHint = trialEnded ? RecordingFlowPolicy.trialEndedPartialHint : Self.partialResultHint
                         self.pipeline.processTranscribedText(error.text, samples: samples, mode: mode)
                     case .failure(let error):
                         self.debugLog("Streaming finish failed: \(error) — fallback to batch")
@@ -1839,8 +1872,29 @@ class AppDelegate: NSObject, NSApplicationDelegate, SettingsWindowDelegate, SPUU
     private func endProcessing() {
         recognitionWatchdog?.cancel()
         recognitionWatchdog = nil
+        polishWatchdog?.cancel()
+        polishWatchdog = nil
         processingSamples = nil
         processingSession = nil
+    }
+
+    /// 润色阶段的总等待封顶（体检 优10）：识别完、润色时网络卡住，以前要白等润色请求自己超时（最多约 60 秒）才出原文。
+    /// 到点就让流水线放弃这次润色（giveUpPolishing）：它走自己「润色失败」那一段——提醒原因、输出原文、照常记历史，
+    /// 之后晚到的润色结果丢掉。边录边发、整段识别、撤销后重新处理三条路都一样。
+    private func startPolishWatchdog() {
+        polishWatchdog?.cancel()
+        polishWatchdog = nil
+        guard let characters = pipeline.polishingCharacterCount else { return }   // 已经润色完了（或没在润色）
+        let cap = RecordingFlowPolicy.polishWaitCap(characters: characters)
+        let generation = processingGeneration
+        let work = DispatchWorkItem { [weak self] in
+            guard let self, generation == self.processingGeneration, self.isProcessing else { return }
+            if self.pipeline.giveUpPolishing(reason: RecordingFlowPolicy.polishTimeoutReason(cap: cap)) {
+                self.debugLog("Polish gave up after \(Int(cap))s (\(characters) chars) — delivering unpolished text")
+            }
+        }
+        polishWatchdog = work
+        DispatchQueue.main.asyncAfter(deadline: .now() + cap, execute: work)
     }
 
     /// 识别阶段最多等多久：正常一两秒就出字；网络卡住时到点直接放弃，不再陪着一轮轮重试干等。
@@ -1868,6 +1922,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SettingsWindowDelegate, SPUU
             }
             self.endProcessing()
             self.isProcessing = false
+            self.pendingCaptureHint = nil
             self.statusBar.setTitle("VP")
             // 存完（音频+历史都写上）才知道能不能说「已存进历史」；这期间用户若已开始新的录音/处理，就别拿旧提示盖住
             self.pipeline.preserveFailedRecording(samples: samples, startedAt: self.processingStartedAt) { [weak self] kept in
@@ -1895,6 +1950,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SettingsWindowDelegate, SPUU
         pendingPolishWarning = nil
         pendingOutputLanguageHint = nil
         pendingPartialHint = nil
+        pendingCaptureHint = nil
         pendingOverlayHide?.cancel()
         pendingOverlayHide = nil
         isProcessing = false
@@ -1966,18 +2022,37 @@ class AppDelegate: NSObject, NSApplicationDelegate, SettingsWindowDelegate, SPUU
                         .trimmingCharacters(in: CharacterSet(charactersIn: "。．.，,！!？?；;"))
                     guard !question.isEmpty else { noSpeech(); return }
                     self.debugLog("ASK question chars=\(question.count) followUp=\(followUp)")
+                    // 体检 修6：问题识别完就放开「处理中」——回答可能要出十几秒（网络卡时更久），这期间听写照常能开始
+                    self.finishAsk()
                     self.overlayWindow.hide()
                     self.answerPanel.setListening(.idle)
                     let history = followUp ? self.answerPanel.history : []
+                    // 固定着的面板上直接问了新问题：旧回答还没出完就作废，免得它的字写进新这一轮
+                    self.abortAskAnswer(reason: "new question")
                     if followUp, self.answerPanel.isVisible { self.answerPanel.appendQuestion(question) } else { self.answerPanel.startThread(question: question) }
                     let askStarted = Date()
                     let thread = self.answerPanel.threadID
+                    self.askAnswerGeneration += 1
+                    let generation = self.askAnswerGeneration
+                    self.askAnswerInFlight = true
                     self.aiPolisher.answer(question: question, history: history, onPartial: { [weak self] partial in
-                        self?.answerPanel.updatePartial(partial)
+                        // 自带 Key 流式在主线程回调；托管通道在网络线程回调一次——都回主线程再碰面板。
+                        // 已在主线程就直接做：再排一次队会排到「结束」后面，已出完的回答又被改回「出字中」
+                        let apply = {
+                            guard let self, generation == self.askAnswerGeneration else { return }
+                            self.answerPanel.updatePartial(partial)
+                        }
+                        if Thread.isMainThread { apply() } else { DispatchQueue.main.async(execute: apply) }
                     }) { [weak self] result in
                         DispatchQueue.main.async {
                             guard let self else { return }
-                            self.finishAsk()
+                            // 已中止（关面板 / 面板上按 Esc / 问了新问题）：结果丢掉，不碰面板、不写历史
+                            guard generation == self.askAnswerGeneration else {
+                                self.debugLog("ASK answer dropped (aborted)")
+                                return
+                            }
+                            // 不再调 finishAsk：「处理中」早已放开，此刻可能正有听写在录 / 在处理，不能替它收胶囊、清状态
+                            self.askAnswerInFlight = false
                             switch result {
                             case .success(let answer):
                                 self.debugLog("ASK answered chars=\(answer.count)")
@@ -1985,8 +2060,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, SettingsWindowDelegate, SPUU
                                 self.aiPolisher.writeAskLog(question: question, answer: answer, thread: thread,
                                                             durationMs: Int(Date().timeIntervalSince(askStarted) * 1000))
                             case .failure(let err):
-                                let reason = (err as? LocalizedError)?.errorDescription ?? "\(err)"
-                                self.debugLog("ASK failed: \(reason)")
+                                self.debugLog("ASK failed: \(err)")
+                                // 以前兜底 "\(err)"：认不出的错误会把英文调试串显示在面板里（体检 修4）
+                                let reason = UserFacingError.message(for: err, fallback: "服务出错了，稍后再试")
                                 self.answerPanel.fail("回答失败：\(reason)")
                             }
                         }
@@ -2061,6 +2137,23 @@ class AppDelegate: NSObject, NSApplicationDelegate, SettingsWindowDelegate, SPUU
         if overlayWindow.capsuleCenterOnScreen != nil { overlayWindow.hide() }
     }
 
+    /// 作废还在出的问 AI 回答：之后到的片段和结果一律丢掉。网络请求本身停不了（AIPolisher.answer 没有取消接口），会在后台跑完。
+    private func abortAskAnswer(reason: String) {
+        guard askAnswerInFlight else { return }
+        askAnswerGeneration += 1
+        askAnswerInFlight = false
+        debugLog("ASK answer aborted (\(reason))")
+    }
+
+    /// 录音中换麦克风后采集没接上（AudioRecorder 等过 1 秒确认没恢复才报）：录音照常进行（之后可能又接上），
+    /// 胶囊上闪一下「设备断开」，听写出字 / 收起时再说清楚（体检 优10：以前只写系统日志，用户不知道后面没录上）
+    private func handleCaptureInterrupted(_ reason: String) {
+        guard isRecording, pendingCaptureHint == nil else { return }
+        debugLog("Capture interrupted during recording: \(reason)")
+        overlayWindow.showRecordingCaption(RecordingFlowPolicy.captureInterruptedCaption, seconds: 4)
+        if !voiceQuestionMode { pendingCaptureHint = RecordingFlowPolicy.captureInterruptedHint }
+    }
+
     /// 鼠标长按问 AI 的开口判定：听到说话才真正进入提问（收起旧回答、接管鼠标）
     private func feedAskSpeechDetector(_ level: Float) {
         guard isRecording, voiceQuestionMode else { askAwaitingSpeech = false; return }
@@ -2131,6 +2224,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SettingsWindowDelegate, SPUU
         streamingSession = nil
         pendingOverlayHide?.cancel()
         pendingOverlayHide = nil
+        pendingCaptureHint = nil
         isRecording = false
         hotkeyManager?.recordingDidLeaveActiveState()
         mouseHoldToTalkManager?.recordingDidLeaveActiveState()
@@ -2225,14 +2319,42 @@ class AppDelegate: NSObject, NSApplicationDelegate, SettingsWindowDelegate, SPUU
 
     /// 录音太短没采到音频 / 识别结果为空：不报红框、不粘贴，安静收起浮窗，
     /// 只在历史里留一条「无内容」记录（asr/output 均为空，复制不会带出占位字）。
-    private func recordEmptyResult() {
+    /// 体检 修1：录满 3 秒还被判没声音的不再悄悄收起——明说「没听到声音，请检查麦克风」，
+    /// 并把录音存进历史可「重试」（识别服务偶尔把「短句 + 尾随静音」误判成无语音）。
+    /// - Parameters:
+    ///   - samples: 这次的录音（一帧都没采到时为 nil）
+    ///   - recordedSeconds: 没有录音时按按下到松手算录了多久
+    private func recordEmptyResult(samples: [Float]?, recordedSeconds: Double = 0) {
         pendingOverlayHide?.cancel()
         pendingOverlayHide = nil
         isProcessing = false
         statusBar.setTitle("VP")
         overlayWindow.hide()
-        DispatchQueue.global(qos: .utility).async { [weak self] in
-            self?.aiPolisher.writePolishLog(asr: "", output: "", durationMs: 0)
+        // 录音中换麦克风后采集没接上：不论长短都说清楚（体检 优10）
+        let captureInterrupted = pendingCaptureHint != nil
+        pendingCaptureHint = nil
+        let audioSeconds = samples.map { Double($0.count) / 16000.0 } ?? recordedSeconds
+        guard RecordingFlowPolicy.shouldReportSilence(audioSeconds: audioSeconds) else {
+            DispatchQueue.global(qos: .utility).async { [weak self] in
+                self?.aiPolisher.writePolishLog(asr: "", output: "", durationMs: 0)
+            }
+            if captureInterrupted {
+                showError(RecordingFlowPolicy.silentRecordingHint(savedToHistory: false, captureInterrupted: true))
+            }
+            return
+        }
+        debugLog("Silent recording \(String(format: "%.1f", audioSeconds))s (samples=\(samples?.count ?? -1)) → 提示检查麦克风")
+        // 「不保存数据」：音频一律不落盘（连临时编码都不做），只提示
+        guard let samples, !samples.isEmpty, AIPolisher.currentHistoryRetention() != .off else {
+            showError(RecordingFlowPolicy.silentRecordingHint(savedToHistory: false, captureInterrupted: captureInterrupted))
+            return
+        }
+        // 存完（音频+历史都写上）才知道能不能说「已存进历史」；这期间用户若已开始新的录音/处理，就别拿旧提示盖住
+        pipeline.preserveFailedRecording(samples: samples, startedAt: processingStartedAt) { [weak self] kept in
+            DispatchQueue.main.async {
+                guard let self, !self.isRecording, !self.isProcessing else { return }
+                self.showError(RecordingFlowPolicy.silentRecordingHint(savedToHistory: kept, captureInterrupted: captureInterrupted))
+            }
         }
     }
 
@@ -2364,10 +2486,18 @@ class AppDelegate: NSObject, NSApplicationDelegate, SettingsWindowDelegate, SPUU
                     }
                     return false
                 }
-                // 试用还没拉到（首启刷新中 / 断网）→ 触发一次刷新并提示稍候。
-                TrialManager.shared.refreshFromServer()
+                // 试用还没拉到（首启刷新中 / 断网 / 被服务器拒绝）→ 触发一次刷新并提示。
+                // 体检 修3：以前不看结果、永远说「正在准备免费试用，请稍候…」。现在服务器给了原因就用原话；
+                // 连续两次连不上就说清楚是网络、给出路（填自己的 Key）。这次刷新的结果回来若已能说清，再更新一次提示。
+                let trial = TrialManager.shared
                 if showFeedback {
-                    overlayWindow.showHint("正在准备免费试用，请稍候…")
+                    overlayWindow.showHint(trial.trialNotReadyHint)
+                }
+                trial.refreshFromServer { [weak self] ok in
+                    guard let self, showFeedback, !ok, !self.isRecording, !self.isProcessing else { return }
+                    let hint = trial.trialNotReadyHint
+                    self.debugLog("Trial handshake failed (\(trial.consecutiveStartFailures)x): \(hint)")
+                    if hint != TrialManager.preparingTrialHint { self.overlayWindow.showHint(hint) }
                 }
                 return false
             }
@@ -2376,15 +2506,23 @@ class AppDelegate: NSObject, NSApplicationDelegate, SettingsWindowDelegate, SPUU
             if license.isMember && TrialManager.shared.isTrialAvailable {
                 if license.isMemberExpired() {
                     if showFeedback {
-                        overlayWindow.showHint("会员已到期 · 续费，或在「设置 → 模型」填自己的 Key")
+                        overlayWindow.showHint(LicenseManager.memberExpiredHint)
                     }
                     return false
                 }
                 if license.hasActiveMembership() { return true }
-                // 会员有效但手里还没有可用令牌（刚转成会员 / 很久没联网）→ 立刻复核一次；联不上就说清楚是网络
-                license.revalidateNow { [weak self] ok in
-                    guard let self, !ok, showFeedback else { return }
-                    self.overlayWindow.showHint("无法连接激活服务，请检查网络后再试")
+                // 会员有效但手里还没有可用令牌（刚转成会员 / 很久没联网 / 到期后 3 天宽限内等续费回执）→ 立刻复核一次；
+                // 只有服务器明确说到期才提示「会员已到期」（体检 优7）；联不上就说清楚是网络。
+                // 体检 优10：60 秒节流挡住的那次不再一律报「请检查网络」——上一次还在路上就不补话，按实际情况补
+                license.revalidateWithOutcome { [weak self] outcome in
+                    // 用户这时已在录下一句：别拿旧提示盖住录音胶囊
+                    guard let self, showFeedback, !self.isRecording, !self.isProcessing else { return }
+                    self.debugLog("Member revalidate on demand: \(outcome)")
+                    if let hint = LicenseManager.revalidationHint(after: outcome,
+                                                                  memberExpired: license.isMemberExpired(),
+                                                                  hasActiveMembership: license.hasActiveMembership()) {
+                        self.overlayWindow.showHint(hint)
+                    }
                 }
                 if showFeedback {
                     overlayWindow.showHint("正在验证会员状态，请稍候…")
@@ -2528,8 +2666,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, SettingsWindowDelegate, SPUU
         }
         AnswerPanel.log = { [weak self] in self?.debugLog($0) }
         answerPanel.isAskPending = { [weak self] in self?.askAwaitingSpeech == true }
+        // 面板收起（点 ×、在面板上按 Esc、开口问新问题时自动收）时回答还没出完：作废它
+        answerPanel.onHideWhileAnswering = { [weak self] in self?.abortAskAnswer(reason: "panel hidden") }
         answerPanel.onFollowUpStart = { [weak self] in
-            guard let self, !self.isRecording, !self.isProcessing else { return false }
+            // 回答还没出完不能续聊（和以前一样：以前这段时间整个处于「处理中」）
+            guard let self, !self.isRecording, !self.isProcessing, !self.askAnswerInFlight else { return false }
             self.voiceQuestionMode = true
             self.voiceQuestionFollowUp = true
             self.overlayWindow.recordingControls = .hidden
@@ -2814,9 +2955,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, SettingsWindowDelegate, SPUU
                 self.overlayWindow.show(state: .processing(message: message))
 
             case .polishing(let message):
-                // 识别完成：总等待封顶只管识别，整理慢了会退回原文（润色失败照常出字）
+                // 识别完成：识别阶段的总等待封顶到此为止，换成润色阶段的封顶（到点先出原文）
                 self.recognitionWatchdog?.cancel()
                 self.recognitionWatchdog = nil
+                self.startPolishWatchdog()
                 self.overlayWindow.show(state: .processing(message: message))
 
             case .done(let text):
@@ -2890,6 +3032,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, SettingsWindowDelegate, SPUU
                     self.pendingPartialHint = nil
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) { self.queueHint(hint) }
                 }
+                if let hint = self.pendingCaptureHint {
+                    self.pendingCaptureHint = nil
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) { self.queueHint(hint) }
+                }
 
                 // 润色失败（额度用尽/欠费等）：文字已照常输出，但明确提醒一次，别让额度耗尽被静默跳过。
                 if let warning = self.pendingPolishWarning {
@@ -2916,15 +3062,20 @@ class AppDelegate: NSObject, NSApplicationDelegate, SettingsWindowDelegate, SPUU
 
             case .error(let message):
                 self.pendingPartialHint = nil
+                self.pendingCaptureHint = nil
                 self.endProcessing()
                 self.isProcessing = false
                 self.statusBar.setTitle("VP")
-                self.showError(message)
+                // 试用在这次录音里到期：后面的段落被当成「没配 Key」，别报「未配置云端语音识别凭证」（体检 优10）
+                let shown = RecordingFlowPolicy.recognitionErrorMessage(message, trialEndedDuringRecording: self.trialEndedDuringRecording)
+                if shown != message { self.debugLog("Recognition error rewritten: trial ended during recording") }
+                self.showError(shown)
 
             case .empty:
                 self.pendingPartialHint = nil
+                let samples = self.processingSamples   // endProcessing 会清掉：先取出来，长录音没声音要留进历史
                 self.endProcessing()
-                self.recordEmptyResult()
+                self.recordEmptyResult(samples: samples)
             }
         }
     }

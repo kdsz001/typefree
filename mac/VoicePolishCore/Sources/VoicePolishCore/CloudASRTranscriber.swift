@@ -109,9 +109,12 @@ public final class CloudASRTranscriber {
             case .invalidAudio: return "音频编码失败"
             case .noData: return "云端识别未返回数据"
             case .parseError: return "云端识别返回无法解析"
-            case .network(let e): return "网络错误：\(e.localizedDescription)"
-            case .serverBusy(let m): return m
-            case .serverFailed(let m): return m
+            // 以前是「网络错误：\(e.localizedDescription)」：系统原话，证书类错误里还带服务器地址
+            case .network(let e):
+                if e is CloudASRTranscriber.RecognitionCancelled { return "识别已取消" }
+                return UserFacingError.networkMessage(for: e) ?? "网络出错"
+            case .serverBusy(let m): return UserFacingError.sanitized(m, fallback: "云端识别失败")
+            case .serverFailed(let m): return UserFacingError.sanitized(m, fallback: "云端识别失败")
             case .timeout: return "识别超时"
             case .noSpeech: return "无内容"
             }
@@ -253,11 +256,12 @@ public final class CloudASRTranscriber {
     /// 明显缩短长录音等待；短录音、无停顿录音与 transcribe 完全一致。
     /// 并发上限默认 5，可用隐藏配置 chunk_asr_max_concurrent 调整；设为 1 即关闭分段（应急开关）。
     public func transcribeAuto(samples: [Float], sampleRate: Int = 16000, version: ASRVersion, completion: @escaping (Result<String, Error>) -> Void) {
+        let token = beginOperation()
         // 百炼限流是 100 RPM 且突发按秒级（约 1.6 次/秒）判定，一口气 5 段易被拒且其报错不走重试，
         // 故百炼降到 2 路并发；火山极速版官方默认 5 并发、标准版/2.0 为 20 QPS，用满 5 路没问题。
         let maxConcurrent = min(chunkMaxConcurrent(), version == .bailian ? 2 : Int.max)
         guard maxConcurrent > 1 else {
-            transcribe(samples: samples, sampleRate: sampleRate, version: version, completion: completion)
+            transcribe(samples: samples, sampleRate: sampleRate, version: version, token: token, completion: completion)
             return
         }
         let plan = AudioChunker.planWithDiagnostics(samples: samples, sampleRate: sampleRate)
@@ -266,7 +270,7 @@ public final class CloudASRTranscriber {
         }
         let ranges = plan.ranges
         guard ranges.count > 1 else {
-            transcribe(samples: samples, sampleRate: sampleRate, version: version, completion: completion)
+            transcribe(samples: samples, sampleRate: sampleRate, version: version, token: token, completion: completion)
             return
         }
         let chunkSeconds = ranges.map { String(format: "%.1f", Double($0.count) / Double(max(sampleRate, 1))) }
@@ -275,10 +279,74 @@ public final class CloudASRTranscriber {
         // 往往已经返回。若这里用 weak，转写器可能已被释放 → guard 直接 return → chunkCompletion
         // 永不回调 → 整次识别永久挂起（历史记录「重试」卡死不出结果就是这个原因）。
         // 这不会造成循环引用：闭包由协调器持有，识别结束即释放。
+        // 所有分段共用一个取消标记：取消后还没发出的段直接判「已取消」，不再上传
         ChunkedASRCoordinator.run(samples: samples, ranges: ranges, maxConcurrent: maxConcurrent, transcribeChunk: { index, chunk, chunkCompletion in
+            guard !token.isCancelled else { chunkCompletion(.failure(Self.cancelledError)); return }
             self.debugLog?("Cloud ASR chunk \(index + 1)/\(ranges.count) started")
-            self.transcribe(samples: chunk, sampleRate: sampleRate, version: version, completion: chunkCompletion)
+            self.transcribe(samples: chunk, sampleRate: sampleRate, version: version, token: token, completion: chunkCompletion)
         }, completion: completion)
+    }
+
+    // MARK: - 取消（优3）
+
+    /// 识别被调用方取消时回给上层的错误。包在 .network 里（不新增公开的错误种类）：
+    /// 上层现有判断里它不重试、不当成「没内容」，和断网一样走失败——而调用方本来就不要这次结果了。
+    struct RecognitionCancelled: Error {}
+    static let cancelledError: Error = TranscriptionError.network(underlying: RecognitionCancelled())
+
+    /// 是不是「调用方取消」造成的失败（分段协调器、边录边发会话据此不再补发 / 重试）
+    static func isCancellation(_ error: Error) -> Bool {
+        if case .network(let underlying)? = error as? TranscriptionError { return underlying is RecognitionCancelled }
+        return false
+    }
+
+    /// 一次识别（含它的分段、异步轮询）共用的取消标记。取消后不再发新请求；已登记的直连请求立刻掐断。
+    final class CancelToken {
+        private let lock = NSLock()
+        private var cancelled = false
+        private let tasks = NSHashTable<URLSessionTask>.weakObjects()   // 请求结束后由系统释放，这里不留
+
+        var isCancelled: Bool {
+            lock.lock(); defer { lock.unlock() }
+            return cancelled
+        }
+
+        /// 登记即将发出的请求；已取消则返回 false（调用方别再发）
+        func track(_ task: URLSessionTask) -> Bool {
+            lock.lock(); defer { lock.unlock() }
+            guard !cancelled else { return false }
+            tasks.add(task)
+            return true
+        }
+
+        func cancel() {
+            lock.lock()
+            cancelled = true
+            let pending = tasks.allObjects
+            tasks.removeAllObjects()
+            lock.unlock()
+            pending.forEach { $0.cancel() }
+        }
+    }
+
+    private let operationsLock = NSLock()
+    private let operations = NSHashTable<CancelToken>.weakObjects()   // 识别结束、闭包释放后自动消失
+
+    private func beginOperation() -> CancelToken {
+        let token = CancelToken()
+        operationsLock.lock(); operations.add(token); operationsLock.unlock()
+        return token
+    }
+
+    /// 取消这个转写器上所有在途的识别：已发出的直连请求（自带 Key）立刻掐断；分段识别还没发的段、
+    /// 异步接口的轮询都不再发；在途请求晚到的结果一律当「已取消」回给上层。之后新发起的识别不受影响。
+    /// 试用 / 会员通道的请求经 TrialManager 发出，也通过 onTask 登记到同一个取消标记，同样当场掐断（含换令牌后重发的那一次）。
+    func cancelAllInFlight() {
+        operationsLock.lock()
+        let tokens = operations.allObjects
+        operations.removeAllObjects()
+        operationsLock.unlock()
+        tokens.forEach { $0.cancel() }
     }
 
     /// 分段识别并发上限（隐藏配置，默认 5；≤1 关闭分段）
@@ -292,6 +360,12 @@ public final class CloudASRTranscriber {
 
     /// 用指定版本识别。
     public func transcribe(samples: [Float], sampleRate: Int = 16000, version: ASRVersion, completion: @escaping (Result<String, Error>) -> Void) {
+        transcribe(samples: samples, sampleRate: sampleRate, version: version, token: beginOperation(), completion: completion)
+    }
+
+    private func transcribe(samples: [Float], sampleRate: Int, version: ASRVersion, token: CancelToken,
+                            completion: @escaping (Result<String, Error>) -> Void) {
+        guard !token.isCancelled else { completion(.failure(Self.cancelledError)); return }
         // 优先压缩为 AAC/M4A 上传（体积约为 WAV 的 1/10，弱网更快、更不易超时），编码失败回退 WAV
         let audioData: Data
         let audioFormat: String
@@ -325,12 +399,12 @@ public final class CloudASRTranscriber {
                 let seconds = Double(samples.count) / Double(max(sampleRate, 1))
                 debugLog?("Cloud ASR: MEMBER via proxy audio=\(audioFormat)/\(audioData.count / 1024)KB")
                 transcribeHosted(route: .member, jsonBody: ["body": body],
-                                 timeout: Self.recognitionBudget(audioSeconds: seconds), completion: completion)
+                                 timeout: Self.recognitionBudget(audioSeconds: seconds), token: token, completion: completion)
             } else {
                 let trialVersion: ASRVersion = .turbo
                 debugLog?("Cloud ASR: TRIAL via proxy, version=\(trialVersion.rawValue) audio=\(audioFormat)/\(audioData.count / 1024)KB")
                 transcribeHosted(route: .trial, jsonBody: ["version": trialVersion.rawValue, "body": body],
-                                 timeout: 30, completion: completion)
+                                 timeout: 30, token: token, completion: completion)
             }
             return
         }
@@ -350,9 +424,9 @@ public final class CloudASRTranscriber {
             let hotWordCount = PersonalVocabulary.currentWords().count
             debugLog?("Cloud ASR: version=\(version.rawValue) provider=volcano resource=\(version.resourceID) sync=\(version.isSync) hotwords=\(hotWordCount) vocab=\(PersonalVocabulary.currentVolcanoVocabMode().rawValue) audio=\(audioFormat)/\(audioData.count / 1024)KB budget=\(Int(budget))s")
             if version.isSync {
-                transcribeSync(body: body, credentials: credentials, resourceID: version.resourceID, budgetSeconds: budget, completion: completion)
+                transcribeSync(body: body, credentials: credentials, resourceID: version.resourceID, budgetSeconds: budget, token: token, completion: completion)
             } else {
-                transcribeAsync(body: body, credentials: credentials, resourceID: version.resourceID, budgetSeconds: budget, completion: completion)
+                transcribeAsync(body: body, credentials: credentials, resourceID: version.resourceID, budgetSeconds: budget, token: token, completion: completion)
             }
         case .bailian:
             guard let apiKey = dashscopeAPIKey() else {
@@ -367,7 +441,7 @@ public final class CloudASRTranscriber {
                 return
             }
             debugLog?("Cloud ASR: version=\(version.rawValue) provider=bailian model=\(Self.bailianModel) audio=\(audioFormat)/\(audioData.count / 1024)KB budget=\(Int(budget))s")
-            transcribeBailian(audioData: audioData, format: audioFormat, apiKey: apiKey, budgetSeconds: budget, completion: completion)
+            transcribeBailian(audioData: audioData, format: audioFormat, apiKey: apiKey, budgetSeconds: budget, token: token, completion: completion)
         }
     }
 
@@ -387,9 +461,15 @@ public final class CloudASRTranscriber {
 
     /// 走服务器试用代理。HTTP 200 的响应体即火山原始响应（逐字透传），解析方式与 transcribeSync 完全一致；
     /// HTTP 非 200 是试用层错误，用服务器给的人话 error 文案。
-    private func transcribeHosted(route: HostedRoute, jsonBody: [String: Any], timeout: TimeInterval,
+    private func transcribeHosted(route: HostedRoute, jsonBody: [String: Any], timeout: TimeInterval, token: CancelToken,
                                   completion: @escaping (Result<String, Error>) -> Void) {
-        TrialManager.shared.hostedPost(route: route, endpoint: "asr", jsonBody: jsonBody, timeout: timeout) { data, response, error in
+        guard !token.isCancelled else { completion(.failure(Self.cancelledError)); return }
+        // 每个发出去的请求（含 401 换令牌后重发的那一次）都登记到这次识别的取消标记：取消时连接当场掐断，
+        // 服务器看到客户端断开就不再换 key、不记账（体检 优3 补齐：以前试用 / 会员请求掐不断，只能等它跑完）
+        TrialManager.shared.hostedPost(route: route, endpoint: "asr", jsonBody: jsonBody, timeout: timeout,
+                                       onTask: { Self.register($0, with: token) }) { data, response, error in
+            // 已取消：结果不要了（上层据此不再补发后续段）
+            if token.isCancelled { completion(.failure(Self.cancelledError)); return }
             if let error = error {
                 completion(.failure(TranscriptionError.network(underlying: error)))
                 return
@@ -409,7 +489,7 @@ public final class CloudASRTranscriber {
                     return
                 }
                 // 200 但没拿到文本 → 火山状态码在 X-Api-Status-Code 头，按状态码分类
-                completion(.failure(self.classifyServerError(status: Self.apiStatusCode(from: response), data: data)))
+                completion(.failure(self.classifyServerError(status: Self.apiStatusCode(from: response), data: data, hosted: true)))
             } else {
                 // 托管层错误（试用额度/会员隐藏限额等）：用服务器给的人话 error 文案
                 let json = (try? JSONSerialization.jsonObject(with: data ?? Data())) as? [String: Any]
@@ -423,7 +503,8 @@ public final class CloudASRTranscriber {
 
     // MARK: - 同步（极速版 flash）
 
-    private func transcribeSync(body: [String: Any], credentials: Credentials, resourceID: String, budgetSeconds: TimeInterval, completion: @escaping (Result<String, Error>) -> Void) {
+    private func transcribeSync(body: [String: Any], credentials: Credentials, resourceID: String, budgetSeconds: TimeInterval,
+                                token: CancelToken, completion: @escaping (Result<String, Error>) -> Void) {
         guard var request = makeRequest(urlString: Self.flashURL, credentials: credentials, resourceID: resourceID, requestID: UUID().uuidString.lowercased()) else {
             completion(.failure(TranscriptionError.invalidAudio))
             return
@@ -438,7 +519,8 @@ public final class CloudASRTranscriber {
 
         // 注意：不要用 [weak self]。测试连接等场景用临时实例，请求发出后实例即释放，
         // weak self 会变 nil 导致 completion 永不回调（界面卡在"测试中…"）。强持有 self 直到回调。
-        URLSession.shared.dataTask(with: request) { data, response, error in
+        let task = URLSession.shared.dataTask(with: request) { data, response, error in
+            if token.isCancelled { completion(.failure(Self.cancelledError)); return }
             if let error = error {
                 completion(.failure(TranscriptionError.network(underlying: error)))
                 return
@@ -457,12 +539,14 @@ public final class CloudASRTranscriber {
             }
             // 没拿到文本 → 按状态码分类失败
             completion(.failure(self.classifyServerError(status: Self.apiStatusCode(from: response), data: data)))
-        }.resume()
+        }
+        Self.resume(task, token: token, completion: completion)
     }
 
     // MARK: - 异步（标准版 / 2.0：submit + 轮询 query）
 
-    private func transcribeAsync(body: [String: Any], credentials: Credentials, resourceID: String, budgetSeconds: TimeInterval, completion: @escaping (Result<String, Error>) -> Void) {
+    private func transcribeAsync(body: [String: Any], credentials: Credentials, resourceID: String, budgetSeconds: TimeInterval,
+                                 token: CancelToken, completion: @escaping (Result<String, Error>) -> Void) {
         let requestID = UUID().uuidString.lowercased()
         guard var submitReq = makeRequest(urlString: Self.submitURL, credentials: credentials, resourceID: resourceID, requestID: requestID) else {
             completion(.failure(TranscriptionError.invalidAudio))
@@ -476,7 +560,8 @@ public final class CloudASRTranscriber {
             return
         }
 
-        URLSession.shared.dataTask(with: submitReq) { _, response, error in
+        let task = URLSession.shared.dataTask(with: submitReq) { _, response, error in
+            if token.isCancelled { completion(.failure(Self.cancelledError)); return }
             if let error = error {
                 completion(.failure(TranscriptionError.network(underlying: error)))
                 return
@@ -488,12 +573,15 @@ public final class CloudASRTranscriber {
                 return
             }
             self.pollQuery(requestID: requestID, credentials: credentials, resourceID: resourceID,
-                           deadline: Date().addingTimeInterval(budgetSeconds), completion: completion)
-        }.resume()
+                           deadline: Date().addingTimeInterval(budgetSeconds), token: token, completion: completion)
+        }
+        Self.resume(task, token: token, completion: completion)
     }
 
     private func pollQuery(requestID: String, credentials: Credentials, resourceID: String,
-                           deadline: Date, completion: @escaping (Result<String, Error>) -> Void) {
+                           deadline: Date, token: CancelToken, completion: @escaping (Result<String, Error>) -> Void) {
+        // 已取消：不再查询
+        guard !token.isCancelled else { completion(.failure(Self.cancelledError)); return }
         if Date() > deadline {
             completion(.failure(TranscriptionError.timeout))
             return
@@ -506,7 +594,8 @@ public final class CloudASRTranscriber {
         // 以前没设，沿用 makeRequest 的 60s：一次查询卡住就要等满一分钟（工单 #1024 日志）
         queryReq.timeoutInterval = max(1, min(Self.queryStallTimeout, deadline.timeIntervalSinceNow))
 
-        URLSession.shared.dataTask(with: queryReq) { data, response, error in
+        let task = URLSession.shared.dataTask(with: queryReq) { data, response, error in
+            if token.isCancelled { completion(.failure(Self.cancelledError)); return }
             if let error = error {
                 completion(.failure(TranscriptionError.network(underlying: error)))
                 return
@@ -526,17 +615,19 @@ public final class CloudASRTranscriber {
                 // 处理中 / 排队中 → 0.3s 后再查
                 DispatchQueue.global(qos: .userInitiated).asyncAfter(deadline: .now() + 0.3) {
                     self.pollQuery(requestID: requestID, credentials: credentials, resourceID: resourceID,
-                                   deadline: deadline, completion: completion)
+                                   deadline: deadline, token: token, completion: completion)
                 }
             default:
                 completion(.failure(self.classifyServerError(status: status, data: data)))
             }
-        }.resume()
+        }
+        Self.resume(task, token: token, completion: completion)
     }
 
     // MARK: - 百炼（DashScope qwen3-asr-flash，同步一步）
 
-    private func transcribeBailian(audioData: Data, format: String, apiKey: String, budgetSeconds: TimeInterval, completion: @escaping (Result<String, Error>) -> Void) {
+    private func transcribeBailian(audioData: Data, format: String, apiKey: String, budgetSeconds: TimeInterval,
+                                   token: CancelToken, completion: @escaping (Result<String, Error>) -> Void) {
         guard let url = URL(string: Self.bailianURL) else {
             completion(.failure(TranscriptionError.invalidAudio))
             return
@@ -564,7 +655,8 @@ public final class CloudASRTranscriber {
             return
         }
         // 同样不用 [weak self]，保证临时实例存活到回调。
-        URLSession.shared.dataTask(with: request) { data, _, error in
+        let task = URLSession.shared.dataTask(with: request) { data, _, error in
+            if token.isCancelled { completion(.failure(Self.cancelledError)); return }
             if let error = error {
                 completion(.failure(TranscriptionError.network(underlying: error)))
                 return
@@ -593,10 +685,22 @@ public final class CloudASRTranscriber {
             // 常见的 Key 错 / 欠费 / 限流由 AIPolisher.extractAPIErrorMessage 统一翻成中文，其余保留原话。
             let msg = AIPolisher.extractAPIErrorMessage(from: json) ?? "百炼识别失败"
             completion(.failure(TranscriptionError.serverFailed(message: msg)))
-        }.resume()
+        }
+        Self.resume(task, token: token, completion: completion)
     }
 
     // MARK: - 共享构造 / 解析
+
+    /// 别人（TrialManager）发出的请求登记到这次识别的取消标记；登记时已取消就当场掐断（请求不会发出，回调收到「已取消」）。
+    static func register(_ task: URLSessionTask, with token: CancelToken) {
+        if !token.track(task) { task.cancel() }
+    }
+
+    /// 登记到这次识别的取消标记后再发出；已取消就不发，直接回「已取消」。
+    private static func resume(_ task: URLSessionTask, token: CancelToken, completion: (Result<String, Error>) -> Void) {
+        guard token.track(task) else { completion(.failure(cancelledError)); return }
+        task.resume()
+    }
 
     private func makeRequest(urlString: String, credentials: Credentials, resourceID: String, requestID: String) -> URLRequest? {
         guard let url = URL(string: urlString) else { return nil }
@@ -680,7 +784,9 @@ public final class CloudASRTranscriber {
     }
 
     /// 把服务端失败分成「临时繁忙（原地重试）」和「业务失败（建议切版本）」。
-    private func classifyServerError(status: Int?, data: Data?) -> TranscriptionError {
+    /// hosted：走的是试用 / 会员通道（服务器用池里的 Key 调火山）——Key 无效 / 没开通是池子的问题，
+    /// 跟用户自己的 Key 无关，不能让他去「检查 API Key」「到控制台开通」（优5）。
+    func classifyServerError(status: Int?, data: Data?, hosted: Bool = false) -> TranscriptionError {
         let message = Self.message(from: data) ?? "云端识别失败"
         guard let status = status else {
             return .serverFailed(message: message)
@@ -693,6 +799,9 @@ public final class CloudASRTranscriber {
         }
         // 新用户最常撞的两个错，原文是英文（"requested resource not granted" / "Invalid X-Api-Key"），
         // 换成能照着办的中文；其余状态码保留服务端原话。
+        if hosted && (status == 45000030 || status == 45000010) {
+            return .serverFailed(message: UserFacingError.hostedServiceUnavailable)
+        }
         if status == 45000030 {   // HTTP 403：账号没开通该识别版本（极速版/标准版/2.0 需分别开通并领免费额度）
             return .serverFailed(message: "火山账号未开通此识别版本，请到控制台开通并领免费额度（45000030）")
         }

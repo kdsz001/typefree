@@ -2576,10 +2576,9 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate, NSTe
             return makeSidebarUpgradeButtonTrial()
         } else if TrialManager.shared.trialExpired || TrialManager.shared.isTotalExhausted {
             return makeSidebarUpgradeButtonExpired()
-        } else if TrialManager.shared.isTrialAvailable {
-            return makeSidebarUpgradeButtonBYOK()
         }
-        return nil   // 自己编译的开源版没有托管服务，不推会员
+        // 试用还没拉到（连不上试用服务器 / 被拒）且没填自己的 Key：不能显示「自带 Key · 永久免费」，他根本没有 Key（体检 修3）
+        return nil   // 自己编译的开源版没有托管服务，同样不推会员
     }
 
     /// 侧边栏卡片——会员续费提醒：一次性年卡/赠送的会员 14 天内到期时出现；自动续费的到期前不打扰，
@@ -5457,11 +5456,10 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate, NSTe
         label?.stringValue = text
     }
 
+    /// 「测试连接」失败的原因：自家错误用自己的中文说明，系统网络错误翻成中文短句，
+    /// 其它 LocalizedError 的说明去掉网址 / IP 后照用；以前兜底 localizedDescription 是英文系统原话（体检 修4）
     private static func errorMessage(_ error: Error) -> String {
-        if let local = error as? LocalizedError, let desc = local.errorDescription {
-            return desc
-        }
-        return error.localizedDescription
+        UserFacingError.message(for: error, fallback: (error as? LocalizedError)?.errorDescription ?? "连接失败，请稍后再试")
     }
 
     private static func shortError(_ error: Error) -> String {
@@ -6071,7 +6069,7 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate, NSTe
                     self.endInlineProcessingRepolish(index: index)
                 case .failure(let err):
                     self.endInlineProcessingRepolish(index: index)  // 恢复按钮（文本不变）
-                    self.presentHistoryActionResult(success: false, message: "重新润色失败：\(err.localizedDescription)")
+                    self.presentHistoryActionResult(success: false, message: "重新润色失败：\(UserFacingError.message(for: err, fallback: "服务出错了，稍后再试"))")
                 }
             }
         }
@@ -6147,7 +6145,7 @@ final class SettingsWindowController: NSWindowController, NSWindowDelegate, NSTe
                 log("History retry: 识别失败 \(err.localizedDescription)")
                 DispatchQueue.main.async {
                     self.endInlineProcessingRepolish(index: index)
-                    self.presentHistoryActionResult(success: false, message: "重新转写失败：\(err.localizedDescription)")
+                    self.presentHistoryActionResult(success: false, message: "重新转写失败：\(UserFacingError.message(for: err, fallback: "云端识别失败"))")
                 }
             case .success(let rawText):
                 let polisher = AIPolisher()

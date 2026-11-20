@@ -43,6 +43,8 @@ public final class StreamingTranscriptionSession {
     private var failedCommitCut: Int?     // 首次空/失败的切点；补救须带上后续音频，且只允许一次
     private var streamingSuspended = false // 补救仍空/失败后等松手，未识别音频从 committedIndex 保留
     private var finished = false
+    /// 某个请求因调用方取消（CloudASRTranscriber.cancelAllInFlight）而失败：之后不再发任何请求（优3）
+    private var cancellation: Error?
     private var pendingFinish: (finalSamples: [Float], completion: (Result<String, Error>) -> Void)?
 
     /// 尾巴两次都没识别出来、但前面已经识别出一部分：通过 finish 的 failure 交出前半段，
@@ -81,7 +83,7 @@ public final class StreamingTranscriptionSession {
     // MARK: - 提交（录音中）
 
     private func tryCommit(snapshot: [Float]) {
-        guard !finished, !committing, !streamingSuspended else { onIngestIdle?(); return }
+        guard !finished, !committing, !streamingSuspended, cancellation == nil else { onIngestIdle?(); return }
         let sr = Double(Self.sampleRate)
         let liveEnd = snapshot.count - Int(Self.liveMarginSeconds * sr)
         let minChunk = Int(Self.minCommitSeconds * sr)
@@ -110,6 +112,17 @@ public final class StreamingTranscriptionSession {
 
     private func handleCommitResult(cut: Int, result: Result<String, Error>) {
         committing = false
+        // 调用方取消了：不补救、不识别尾巴，等着收尾的直接按失败交回（调用方已经不要这次结果）
+        if case .failure(let error) = result, CloudASRTranscriber.isCancellation(error) {
+            cancellation = error
+            log("stream commit cancelled, no more requests")
+            onCommitProcessed?(committedIndex)
+            if let pending = pendingFinish {
+                pendingFinish = nil
+                pending.completion(.failure(error))
+            }
+            return
+        }
         switch result {
         case .success(let text) where !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty:
             committedTexts.append(text)
@@ -137,6 +150,10 @@ public final class StreamingTranscriptionSession {
     // MARK: - 收尾（松手）
 
     private func runFinish(finalSamples: [Float], completion: @escaping (Result<String, Error>) -> Void) {
+        if let cancellation {
+            completion(.failure(cancellation))
+            return
+        }
         let start = min(committedIndex, finalSamples.count)
         let tail = Array(finalSamples[start..<finalSamples.count])
         let committed = committedTexts
@@ -160,6 +177,10 @@ public final class StreamingTranscriptionSession {
                 switch result {
                 case .success(let tailText):
                     completion(.success(Self.join(committed + [tailText])))
+                case .failure(let error) where CloudASRTranscriber.isCancellation(error):
+                    // 调用方取消了：不重试
+                    self.log("stream tail cancelled")
+                    completion(.failure(error))
                 case .failure(let error) where committed.isEmpty:
                     completion(.failure(error))
                 case .failure(let error) where retriesLeft > 0:

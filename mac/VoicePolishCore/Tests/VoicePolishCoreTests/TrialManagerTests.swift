@@ -200,3 +200,48 @@ extension TrialManagerTests {
         XCTAssertEqual(unknown["device_id"] as? String, "d")
     }
 }
+
+// MARK: - 体检 修3：握手连不上 / 被拒时的提示
+
+extension TrialManagerTests {
+    func testStartFailureUsesServerReasonOnlyWhenRejectedWithMessage() {
+        // 同一网络今天新设备太多：服务器 429 + 中文原话 → 明确拒绝，原话带回
+        XCTAssertEqual(TrialManager.startFailure(statusCode: 429, json: ["error": "今日新设备过多，请明天再试或填自己的 API Key", "code": "ip_new_device_cap"]),
+                       .rejected(message: "今日新设备过多，请明天再试或填自己的 API Key"))
+        XCTAssertEqual(TrialManager.startFailure(statusCode: 429, json: ["error": "请求过于频繁，请稍后再试", "code": "rate_limited"]),
+                       .rejected(message: "请求过于频繁，请稍后再试"))
+        // 没给原因 / 回了看不懂的东西（网关 HTML）/ 根本没回应 → 当连不上
+        XCTAssertEqual(TrialManager.startFailure(statusCode: 502, json: nil), .unreachable)
+        XCTAssertEqual(TrialManager.startFailure(statusCode: 500, json: ["error": "  "]), .unreachable)
+        XCTAssertEqual(TrialManager.startFailure(statusCode: nil, json: nil), .unreachable)
+        // 200 却走到失败分支 = JSON 解析不出来 → 当连不上
+        XCTAssertEqual(TrialManager.startFailure(statusCode: 200, json: ["error": "x"]), .unreachable)
+    }
+
+    func testTrialNotReadyHint() {
+        // 还没失败过 / 只失败一次：照旧请稍候（首启那一下网络可能还没好）
+        XCTAssertEqual(TrialManager.trialNotReadyHint(lastFailure: nil, consecutiveFailures: 0), TrialManager.preparingTrialHint)
+        XCTAssertEqual(TrialManager.trialNotReadyHint(lastFailure: .unreachable, consecutiveFailures: 1), TrialManager.preparingTrialHint)
+        // 连续两次连不上：说清楚是网络，给出路
+        XCTAssertEqual(TrialManager.trialNotReadyHint(lastFailure: .unreachable, consecutiveFailures: 2), TrialManager.unreachableTrialHint)
+        XCTAssertTrue(TrialManager.unreachableTrialHint.contains("API Key"))
+        // 服务器明确拒绝：第一次就用原话
+        XCTAssertEqual(TrialManager.trialNotReadyHint(lastFailure: .rejected(message: "请求过于频繁，请稍后再试"), consecutiveFailures: 1),
+                       "请求过于频繁，请稍后再试")
+    }
+
+    func testStartOutcomeCountsConsecutiveFailuresAndResetsOnSuccess() {
+        let m = TrialManager(defaults: UserDefaults(suiteName: "trial-test-start-outcome")!,
+                             session: .shared, apiBase: "https://127.0.0.1:1")
+        XCTAssertEqual(m.trialNotReadyHint, TrialManager.preparingTrialHint)
+        m.noteStartOutcome(.unreachable)
+        XCTAssertEqual(m.trialNotReadyHint, TrialManager.preparingTrialHint)
+        m.noteStartOutcome(.unreachable)
+        XCTAssertEqual(m.consecutiveStartFailures, 2)
+        XCTAssertEqual(m.trialNotReadyHint, TrialManager.unreachableTrialHint)
+        m.noteStartOutcome(nil)
+        XCTAssertEqual(m.consecutiveStartFailures, 0)
+        XCTAssertNil(m.lastStartFailure)
+        XCTAssertEqual(m.trialNotReadyHint, TrialManager.preparingTrialHint)
+    }
+}

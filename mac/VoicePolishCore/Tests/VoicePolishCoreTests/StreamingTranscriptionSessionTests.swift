@@ -321,6 +321,60 @@ final class StreamingTranscriptionSessionTests: XCTestCase {
         wait(for: [exp], timeout: 3)
     }
 
+    // MARK: - 调用方取消（优3）：不再补救、不识别尾巴、不重试
+
+    /// 松手后在等在途段，这一段因取消失败 → 直接按失败交回，尾巴一个请求都不发
+    func testCancelledCommitWhileFinishPendingSendsNoTail() {
+        let commitStarted = expectation(description: "commit started")
+        var releaseCommit: (() -> Void)?
+        var tailCalls = 0
+        let lock = NSLock()
+        let session = StreamingTranscriptionSession(chunkTranscriber: { _, done in
+            releaseCommit = { done(.failure(CloudASRTranscriber.cancelledError)) }
+            commitStarted.fulfill()
+        }, tailTranscriber: { _, done in
+            lock.lock(); tailCalls += 1; lock.unlock()
+            done(.success("尾"))
+        })
+        let snapshot = speechWithPauses(blocks: 6)
+        session.ingest(snapshot: snapshot)
+        wait(for: [commitStarted], timeout: 3)
+
+        let finished = expectation(description: "finished")
+        session.finish(finalSamples: snapshot) { result in
+            guard case .failure(let error) = result else { XCTFail("取消后应失败"); finished.fulfill(); return }
+            XCTAssertTrue(CloudASRTranscriber.isCancellation(error))
+            finished.fulfill()
+        }
+        releaseCommit?()
+        wait(for: [finished], timeout: 3)
+        lock.lock(); XCTAssertEqual(tailCalls, 0, "取消后不能再识别尾巴"); lock.unlock()
+    }
+
+    /// 尾巴因取消失败：前面已有文字也不重试（以前任何失败都会再试一次）
+    func testCancelledTailIsNotRetried() {
+        var tailCalls = 0
+        let lock = NSLock()
+        let session = StreamingTranscriptionSession(chunkTranscriber: { _, done in
+            DispatchQueue.global().async { done(.success("段")) }
+        }, tailTranscriber: { _, done in
+            lock.lock(); tailCalls += 1; lock.unlock()
+            DispatchQueue.global().async { done(.failure(CloudASRTranscriber.cancelledError)) }
+        })
+        let snapshot = speechWithPauses(blocks: 6)
+        drainCommits(session, snapshot)
+        XCTAssertFalse(session.committedText.isEmpty, "前置条件：前面已有识别出的文字")
+        let exp = expectation(description: "finish")
+        session.finish(finalSamples: snapshot) { result in
+            guard case .failure(let error) = result else { XCTFail("应失败"); exp.fulfill(); return }
+            XCTAssertTrue(CloudASRTranscriber.isCancellation(error))
+            XCTAssertFalse(error is StreamingTranscriptionSession.PartialResultError)
+            exp.fulfill()
+        }
+        wait(for: [exp], timeout: 3)
+        lock.lock(); XCTAssertEqual(tailCalls, 1); lock.unlock()
+    }
+
     // MARK: - finish 等在途段完成后再收尾
 
     func testFinishWaitsForInFlightCommit() {

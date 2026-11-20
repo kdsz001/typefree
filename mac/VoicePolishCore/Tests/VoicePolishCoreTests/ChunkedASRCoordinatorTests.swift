@@ -122,6 +122,43 @@ final class ChunkedASRCoordinatorTests: XCTestCase {
         wait(for: [exp], timeout: 5)
     }
 
+    /// 优3：并段恢复途中被取消 → 整体失败，后面待恢复的段不再发
+    func testCancelledRecoveryStopsFurtherRecovery() {
+        // 五段：段1、段3 大声但被判无语音 → 两个待恢复目标
+        let amp: [Float] = [0.05, 0.30, 0.05, 0.30, 0.05]
+        var samples: [Float] = []
+        var ranges: [Range<Int>] = []
+        for a in amp {
+            let start = samples.count
+            for i in 0..<8000 { samples.append(a * ((i % 2 == 0) ? 1 : -1)) }
+            ranges.append(start..<samples.count)
+        }
+        let lock = NSLock()
+        var recoveryCalls = 0
+        var result: Result<String, Error>?
+        let exp = expectation(description: "done")
+        ChunkedASRCoordinator.run(samples: samples, ranges: ranges, maxConcurrent: 5, transcribeChunk: { index, chunk, completion in
+            DispatchQueue.global().async {
+                if chunk.count > 8000 {   // 并段恢复请求
+                    lock.lock(); recoveryCalls += 1; lock.unlock()
+                    completion(.failure(CloudASRTranscriber.cancelledError))
+                } else if index == 1 || index == 3 {
+                    completion(.failure(CloudASRTranscriber.TranscriptionError.noSpeech))
+                } else {
+                    completion(.success("段\(index)"))
+                }
+            }
+        }, completion: { r in
+            result = r
+            exp.fulfill()
+        })
+        wait(for: [exp], timeout: 5)
+        guard case .failure(let error)? = result else { return XCTFail("取消后应失败") }
+        XCTAssertTrue(CloudASRTranscriber.isCancellation(error))
+        Thread.sleep(forTimeInterval: 0.1)
+        lock.lock(); XCTAssertEqual(recoveryCalls, 1, "第一次恢复被取消后，第二个目标不该再发"); lock.unlock()
+    }
+
     /// 临时性失败（服务器繁忙）原地重试一次后成功
     func testTransientFailureRetriedOnceThenSucceeds() {
         let (samples, ranges) = fixture(chunks: 3)

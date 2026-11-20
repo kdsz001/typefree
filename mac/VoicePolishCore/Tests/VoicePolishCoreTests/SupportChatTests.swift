@@ -83,6 +83,25 @@ final class SupportChatTests: XCTestCase {
         XCTAssertEqual(SupportChatService.classify(code: 502, json: ["error": "bad gateway"]), .network("服务器返回 502"))
     }
 
+    /// 修4：发工单时断网 / 超时，以前显示系统原话（error.localizedDescription，英文、可能带服务器地址）
+    func testNetworkFailureShowsChineseShortSentence() throws {
+        let dir = FileManager.default.temporaryDirectory.appendingPathComponent("support-test-\(UUID().uuidString)")
+        let suite = UserDefaults(suiteName: "support-test-\(UUID().uuidString)")!
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let config = URLSessionConfiguration.ephemeral
+        config.protocolClasses = [TimingOutURLProtocol.self]
+        let service = SupportChatService(defaults: suite, storeDir: dir, apiBase: "https://support.example.invalid",
+                                         session: URLSession(configuration: config))
+        let done = expectation(description: "create")
+        service.createTicket(category: .issue, out(text: "闪退了")) { result in
+            guard case .failure(let err) = result else { XCTFail("应失败"); done.fulfill(); return }
+            XCTAssertEqual(err, .network("网络超时"))
+            XCTAssertEqual(err.userMessage, "发送失败：网络超时")
+            done.fulfill()
+        }
+        wait(for: [done], timeout: 5)
+    }
+
     func testUnreadIsCountedPerTicketAndOpenTicketsSortFirst() throws {
         let dir = FileManager.default.temporaryDirectory.appendingPathComponent("support-test-\(UUID().uuidString)")
         let suite = UserDefaults(suiteName: "support-test-\(UUID().uuidString)")!
@@ -136,4 +155,18 @@ final class SupportChatTests: XCTestCase {
         XCTAssertNil(service.messages[0].ticketId)
         XCTAssertEqual(service.unreadCount, 1)
     }
+}
+
+/// 所有请求都以「超时」失败，系统描述里故意带上服务器地址
+private final class TimingOutURLProtocol: URLProtocol {
+    override class func canInit(with request: URLRequest) -> Bool { true }
+    override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
+    override func startLoading() {
+        let err = NSError(domain: NSURLErrorDomain, code: NSURLErrorTimedOut, userInfo: [
+            NSLocalizedDescriptionKey: "The request timed out.",
+            NSURLErrorFailingURLStringErrorKey: "https://203.0.113.7:8443/support/tickets/create",
+        ])
+        client?.urlProtocol(self, didFailWithError: err)
+    }
+    override func stopLoading() {}
 }

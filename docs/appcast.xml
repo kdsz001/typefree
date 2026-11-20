@@ -327,5 +327,14 @@
             <description><![CDATA[<h3>修复</h3><ul><li><strong>⌘W 可以关闭窗口了</strong>：打开 Typefree 的窗口后，按 ⌘W 就能关掉，和点左上角红色按钮一样。</li><li><strong>历史记录里点「复制输出」会有提示了</strong>：按钮会短暂变成「✓ 已复制」，一看就知道复制上了。</li></ul>]]></description>
             <enclosure url="https://github.com/kdsz001/typefree/releases/download/v3.0.15/Typefree-3.0.15.dmg" sparkle:edSignature="zEP4XCaf3Y7I5CAOBtSepd9V43pJKzHSqdBAE93vHGauVG42sNSjNg0goaHS9CQSgQRJZ7Ka+C4kb23ke24IBw==" length="2796001" type="application/octet-stream"/>
         </item>
+        <item>
+            <title>3.0.16</title>
+            <sparkle:version>3.0.16</sparkle:version>
+            <sparkle:shortVersionString>3.0.16</sparkle:shortVersionString>
+            <pubDate>Fri, 20 Nov 2026 03:57:51 +0000</pubDate>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+            <description><![CDATA[<h3>改进</h3><ul><li><strong>问 AI 回答时可以接着说话了</strong>：以前 AI 的回答没显示完，按快捷键没有反应，要等它出完。现在回答还在出字时就能直接开始下一次语音输入，回答照常显示完。</li><li><strong>润色卡住时不再干等</strong>：网络不好、AI 整理迟迟不回来时，以前最长要等一分钟。现在大约半分钟就先把原文交给你，并提示这次没整理成。</li><li><strong>取消识别后立刻停止上传</strong>：按 Esc 取消后，还没传完的录音不会再继续上传。</li></ul><h3>修复</h3><ul><li><strong>说了很久却什么都没出来时，会告诉你原因</strong>：麦克风没收到声音（比如选错了设备、耳机切换）时，以前胶囊只是悄悄消失。现在录满 3 秒还没听到声音会提示「没听到声音，请检查麦克风」，录音保存在历史里，可以点「重试」。</li><li><strong>录音中途麦克风断开会提醒</strong>：比如说话时拔掉了耳机，会提示后面的话可能没录上。</li><li><strong>自动续费的会员在续费当天不会被误提示「已到期」</strong>。</li><li><strong>连不上试用服务器时会说明原因</strong>：以前一直显示「正在准备免费试用，请稍候…」。现在会直接告诉你是网络问题，或者服务器给出的具体原因，并提示可以填自己的 Key 继续用。</li><li><strong>网络出错的提示改成了简短的中文</strong>：不再是一长串看不懂的英文。</li><li><strong>在 Typefree 自己的窗口里说话、但光标不在输入框时</strong>：文字会留在剪贴板，并提示按 ⌘V 粘贴，不再白说一遍。</li><li><strong>一段话太长、AI 没整理完时</strong>：会输出完整的原文并说明，不再只给半截。</li><li><strong>清理过系统设置后仍然可以提交反馈</strong>：以前会一直提示凭证不对、发不出去。</li><li><strong>其他 App 卡住时，不再连带拖慢 Typefree</strong>。</li></ul><h3>服务端同步修复（不更新也已生效）</h3><ul><li><strong>试用期间润色不会再提前停掉</strong>：以前界面上还剩几千字额度，润色却已经用不了。现在润色额度会和显示的额度一致。</li><li><strong>识别或润色失败不再扣额度</strong>：试用和会员都是这样。</li><li><strong>会员每天的润色上限算错了</strong>：正常使用的会员会被提前拦住，现在恢复正常。</li></ul>]]></description>
+            <enclosure url="https://github.com/kdsz001/typefree/releases/download/v3.0.16/Typefree-3.0.16.dmg" sparkle:edSignature="P2A1kKMlUO4VlSGsejQ576xQp9JjmoF1Z39o7WMAoF3TSy0AARWN8p7smvcV0BwzT5W+pfN2rg3I+edCL65MCg==" length="2842845" type="application/octet-stream"/>
+        </item>
     </channel>
 </rss>
